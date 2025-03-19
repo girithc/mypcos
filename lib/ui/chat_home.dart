@@ -372,7 +372,7 @@ class _ChatHomePageState extends State<ChatHomePage> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: ListTile(
         leading: CircleAvatar(
-          child: Icon(Icons.person),
+          child: Icon(Icons.person, color: Colors.black),
           backgroundColor: Colors.white,
         ),
         title: Text(
