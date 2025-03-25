@@ -1,13 +1,29 @@
 import 'package:babstrap_settings_screen/babstrap_settings_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:roo_mobile/main.dart';
 
 class SettingsPageContent extends StatelessWidget {
   final ScrollController scrollController;
 
-  const SettingsPageContent({Key? key, required this.scrollController})
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final _secureStorage = const FlutterSecureStorage();
+
+  SettingsPageContent({Key? key, required this.scrollController})
     : super(key: key);
+
+  Future<void> _signOut(BuildContext context) async {
+    await _auth.signOut();
+    await _secureStorage.deleteAll(); // Delete everything from secure storage
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => LoginPage()),
+      (Route<dynamic> route) => false, // Remove all routes from stack
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -99,12 +115,7 @@ class SettingsPageContent extends StatelessWidget {
                     ),
                     SettingsItem(
                       onTap: () {
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(builder: (context) => LoginPage()),
-                          (Route<dynamic> route) =>
-                              false, // This removes all routes in the stack
-                        );
+                        _signOut(context);
                       },
                       icons: Icons.info_rounded,
                       iconStyle: IconStyle(backgroundColor: Colors.purple),

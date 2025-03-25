@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:developer' show log;
 
 import 'package:animated_notch_bottom_bar/animated_notch_bottom_bar/animated_notch_bottom_bar.dart';
@@ -11,6 +12,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:http/http.dart' as http;
 import 'package:introduction_screen/introduction_screen.dart';
 import 'package:roo_mobile/firebase_options.dart';
 import 'package:roo_mobile/ui/chat.dart';
@@ -19,6 +21,7 @@ import 'package:roo_mobile/ui/events.dart';
 import 'package:roo_mobile/ui/home.dart';
 import 'package:roo_mobile/ui/library.dart';
 import 'package:roo_mobile/ui/track.dart';
+import 'package:roo_mobile/utils/constants.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 void main() async {
@@ -65,105 +68,93 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final GoogleSignIn _googleSignIn = GoogleSignIn();
-
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final _secureStorage = const FlutterSecureStorage();
 
-  void _signInWithGoogle(BuildContext context) {
-    // Add your Google sign-in logic here (you can use Firebase or other methods)
-    // After successful sign-in, navigate to MyHomePage
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => MyHomePage()),
-    );
+  @override
+  void initState() {
+    super.initState();
+    checkAuthStatus();
   }
 
-  // Method to handle Apple sign-in
+  Future<void> checkAuthStatus() async {
+    final storedToken = await _secureStorage.read(key: 'auth_token');
+    print("Auth Token: $storedToken");
+    if (storedToken != null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => MyHomePage()),
+      );
+    }
+  }
+
+  // Sign in with Google
+  Future<void> _signInWithGoogle(BuildContext context) async {
+    try {
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) return;
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      UserCredential authResult = await FirebaseAuth.instance
+          .signInWithCredential(credential);
+      _handleAuthSuccess(authResult);
+    } catch (e) {
+      log('Google Sign-In Error: $e');
+    }
+  }
+
+  // Sign in with Apple
   Future<void> _signInWithApple(BuildContext context) async {
     try {
-      // 1. Perform the sign-in request
-      final credential = await SignInWithApple.getAppleIDCredential(
-        scopes: [
-          AppleIDAuthorizationScopes.email,
-          AppleIDAuthorizationScopes.fullName,
-        ],
-        webAuthenticationOptions: WebAuthenticationOptions(
-          clientId: 'com.yourdomain.yourapp.service',
-          redirectUri: Uri.parse(
-            'https://yourdomain.com/callbacks/sign_in_with_apple',
-          ),
-        ),
+      final appleProvider = AppleAuthProvider();
+      UserCredential auth = await FirebaseAuth.instance.signInWithProvider(
+        appleProvider,
       );
-
-      // 2. Create an OAuthCredential from the credential
-      final oauthCredential = OAuthProvider("apple.com").credential(
-        idToken: credential.identityToken,
-        accessToken: credential.authorizationCode,
-      );
-
-      // 3. Sign in to Firebase with the credential
-      final UserCredential userCredential = await _auth.signInWithCredential(
-        oauthCredential,
-      );
-
-      // 4. Save the Apple credentials if this is a new user
-      if (credential.givenName != null && credential.familyName != null) {
-        await _secureStorage.write(
-          key: 'appleGivenName',
-          value: credential.givenName,
-        );
-        await _secureStorage.write(
-          key: 'appleFamilyName',
-          value: credential.familyName,
-        );
-      }
-
-      // 5. Check if we have a user
-      if (userCredential.user != null) {
-        // Check if the user is new (first time signing in)
-        if (userCredential.additionalUserInfo?.isNewUser ?? false) {
-          final displayName = await _getAppleDisplayName();
-          if (displayName != null) {
-            await userCredential.user?.updateDisplayName(displayName);
-          }
-        }
-
-        // Show the modal with account details
-        showDialog(
-          context: context,
-          builder:
-              (context) => AppleAccountModal(
-                displayName: userCredential.user?.displayName,
-                email: userCredential.user?.email,
-                onClose: () {
-                  Navigator.of(context).pop(); // Close the modal
-                },
-                onContinue: () {
-                  Navigator.of(context).pop(); // Close the modal
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => MyHomePage()),
-                  );
-                },
-              ),
-        );
-      }
-    } catch (error) {
-      print("Apple sign in error: $error");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to sign in with Apple: $error')),
-      );
+      _handleAuthSuccess(auth);
+    } catch (e) {
+      log('Apple Sign-In Error: $e');
     }
   }
 
-  Future<String?> _getAppleDisplayName() async {
-    final givenName = await _secureStorage.read(key: 'appleGivenName');
-    final familyName = await _secureStorage.read(key: 'appleFamilyName');
+  // Handle authentication success
+  Future<void> _handleAuthSuccess(UserCredential auth) async {
+    final user = auth.user;
+    if (user == null) return;
 
-    if (givenName != null && familyName != null) {
-      return '$givenName $familyName';
+    final firebaseIdToken = await user.getIdToken();
+    final requestBody = {
+      'provider': 'firebase',
+      'firebase_token': firebaseIdToken,
+      'email': user.email,
+      'name': user.displayName,
+    };
+
+    final response = await http.post(
+      Uri.parse('https://your-backend-url.com/auth/login'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(requestBody),
+    );
+
+    if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
+      await _secureStorage.write(
+        key: 'auth_token',
+        value: responseData['token'],
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => MyHomePage()),
+      );
+    } else {
+      log('Backend Authentication Failed: ${response.statusCode}');
     }
-    return null;
   }
 
   @override
@@ -395,11 +386,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class MyHomePageState extends State<MyHomePage> {
-  /// Controller to handle bottom nav bar
-  final NotchBottomBarController _controller = NotchBottomBarController(
-    index: 0,
-  );
-
   int selectedIndex = 0;
   bool showChatHome = true;
 
@@ -502,6 +488,7 @@ class Page1 extends StatelessWidget {
 class AppleAccountModal extends StatelessWidget {
   final String? displayName;
   final String? email;
+  final String? credentials;
   final VoidCallback onClose;
   final VoidCallback onContinue;
 
@@ -509,6 +496,7 @@ class AppleAccountModal extends StatelessWidget {
     super.key,
     required this.displayName,
     required this.email,
+    required this.credentials,
     required this.onClose,
     required this.onContinue,
   });
