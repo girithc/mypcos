@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:roo_mobile/ui/bottom_sheet.dart';
 import 'package:roo_mobile/ui/chat.dart';
 import 'package:roo_mobile/ui/settings.dart';
 
@@ -63,7 +64,7 @@ class CourseCard extends StatelessWidget {
         vertical: screenHeight * 0.02,
       ),
       height: screenHeight * 0.35,
-      width: screenWidth * 0.6, // Reduced the width here
+      width: screenWidth * 0.5, // Reduced the width here
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.all(Radius.circular(screenWidth * 0.075)),
@@ -157,7 +158,7 @@ class SecondaryCourseCard extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: colorl,
-        borderRadius: BorderRadius.all(Radius.circular(screenWidth * 0.05)),
+        borderRadius: BorderRadius.all(Radius.circular(screenWidth * 0.02)),
       ),
       child: Row(
         children: [
@@ -247,15 +248,8 @@ class HomePage extends StatelessWidget {
                                   .deepPurpleAccent, // Change icon color to white for contrast
                         ),
                         onPressed: () {
+                          showSettingsBottomSheet(context);
                           // Navigate to the Settings page when the icon is pressed
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (context) =>
-                                      SettingsPage(), // Replace with your SettingsPage
-                            ),
-                          );
                         },
                       ),
                     ),

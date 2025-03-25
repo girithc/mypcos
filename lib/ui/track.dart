@@ -67,7 +67,7 @@ class ActionCard extends StatelessWidget {
       width: screenWidth * 0.4, // Reduced the width here
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.all(Radius.circular(screenWidth * 0.075)),
+        borderRadius: BorderRadius.all(Radius.circular(screenWidth * 0.05)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -140,7 +140,7 @@ class SecondaryActionCard extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: colorl,
-          borderRadius: BorderRadius.all(Radius.circular(screenWidth * 0.05)),
+          borderRadius: BorderRadius.all(Radius.circular(screenWidth * 0.02)),
         ),
         child: Row(
           children: [
@@ -285,7 +285,7 @@ class _TrackPageState extends State<TrackPage> {
                           radius: 24,
                           child: GestureDetector(
                             onTap: () {
-                              showChatBottomSheet(context);
+                              showSettingsBottomSheet(context);
                             },
                             child: ClipOval(
                               child: Image.asset(

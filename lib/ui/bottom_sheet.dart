@@ -4,6 +4,7 @@ import 'package:calendar_timeline/calendar_timeline.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:roo_mobile/ui/settings.dart';
 
 void showDietaryPreferencesBottomSheet(BuildContext context) {
   showModalBottomSheet(
@@ -310,6 +311,7 @@ class _MedicalReportUploadContentState
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
+
         padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -484,4 +486,25 @@ class _ProgressTrackerContainerState extends State<ProgressTrackerContainer> {
       ),
     );
   }
+}
+
+void showSettingsBottomSheet(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (BuildContext context) {
+      return DraggableScrollableSheet(
+        initialChildSize: 0.5, // Start at 50% of screen height
+        minChildSize: 0.4, // Minimum height of 25% of screen
+        maxChildSize: 0.9, // Maximum height of 75% of screen
+        expand: false, // Prevents full-screen expansion
+        builder: (BuildContext context, ScrollController scrollController) {
+          return SettingsPageContent(scrollController: scrollController);
+        },
+      );
+    },
+  );
 }
