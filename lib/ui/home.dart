@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -67,7 +68,7 @@ class CourseCard extends StatelessWidget {
       width: screenWidth * 0.5, // Reduced the width here
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.all(Radius.circular(screenWidth * 0.075)),
+        borderRadius: BorderRadius.all(Radius.circular(screenWidth * 0.03)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -202,10 +203,20 @@ class SecondaryCourseCard extends StatelessWidget {
   }
 }
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  @override
+  void initState() {
+    super.initState();
+    print(FirebaseAuth.instance.currentUser.toString());
+  }
+
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
     final screenHeight = mediaQuery.size.height;
@@ -226,14 +237,15 @@ class HomePage extends StatelessWidget {
                           .spaceBetween, // Ensures text and icon are at opposite ends
                   children: [
                     Text(
-                      "Trending",
+                      FirebaseAuth.instance.currentUser?.displayName ??
+                          "Trending",
                       style: GoogleFonts.sriracha(
-                        // ✅ Apply Rock Salt font
                         fontSize: 32,
                         fontWeight: FontWeight.w800,
                         color: Colors.black,
                       ),
                     ),
+
                     // Reduced padding around the CircleAvatar
                     CircleAvatar(
                       backgroundColor:

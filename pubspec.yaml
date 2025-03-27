@@ -83,6 +83,7 @@ flutter:
     - assets/data/messages.json
     - assets/img/profile_pic.png
     - assets/img/women-arms.jpg
+    - assets/img/google.png
 
 
   # The following line ensures that the Material Icons font is

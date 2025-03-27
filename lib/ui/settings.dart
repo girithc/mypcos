@@ -27,6 +27,8 @@ class SettingsPageContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final userEmail = _auth.currentUser?.email ?? "No email found";
+
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: const BoxDecoration(
@@ -63,62 +65,68 @@ class SettingsPageContent extends StatelessWidget {
                   cardRadius: 12.0,
                   backgroundMotifColor: Colors.white,
                   onTap: () => print("User card tapped"),
-                  userName: "Nom de l'utilisateur",
+                  userName: userEmail,
+                  userNameStyle: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    fontStyle: FontStyle.italic,
+                  ),
                 ),
                 SettingsGroup(
+                  dividerStyle: Divider(
+                    color: Colors.deepPurpleAccent.withOpacity(
+                      0.3,
+                    ), // Custom divider color
+                    thickness: 1.0, // Custom divider thickness
+                  ),
                   items: [
                     SettingsItem(
                       onTap: () {},
                       icons: CupertinoIcons.pencil_outline,
-                      iconStyle: IconStyle(),
-                      title: 'Appearance',
-                      subtitle: "Make Ziar'App yours",
-                      titleMaxLine: 1,
-                      subtitleMaxLine: 1,
-                    ),
-                    SettingsItem(
-                      onTap: () {},
-                      icons: Icons.fingerprint,
                       iconStyle: IconStyle(
                         iconsColor: Colors.white,
                         withBackground: true,
-                        backgroundColor: Colors.red,
+                        backgroundColor: Colors.deepPurpleAccent,
                       ),
-                      title: 'Privacy',
-                      subtitle: "Lock Ziar'App to improve your privacy",
+                      title: 'Appearance',
+                      subtitle: "Customize your experience",
+                    ),
+                    SettingsItem(
+                      onTap: () {},
+                      icons: Icons.person,
+                      iconStyle: IconStyle(
+                        iconsColor: Colors.white,
+                        withBackground: true,
+                        backgroundColor: Colors.deepPurpleAccent,
+                      ),
+                      title: 'Profile',
+                      subtitle: "Learn more about this app",
                     ),
                     SettingsItem(
                       onTap: () {},
                       icons: Icons.dark_mode_rounded,
                       iconStyle: IconStyle(
-                        iconsColor: Colors.white,
+                        iconsColor: Colors.deepPurpleAccent,
                         withBackground: true,
-                        backgroundColor: Colors.red,
+                        backgroundColor: Colors.white,
                       ),
-                      title: 'Dark mode',
-                      subtitle: "Automatic",
+                      title: 'Dark Mode',
+                      subtitle: "Enable or disable dark mode",
                       trailing: Switch.adaptive(
                         value: false,
                         onChanged: (value) {},
                       ),
                     ),
-                  ],
-                ),
-                SettingsGroup(
-                  items: [
+
                     SettingsItem(
-                      onTap: () {},
-                      icons: Icons.info_rounded,
-                      iconStyle: IconStyle(backgroundColor: Colors.purple),
-                      title: 'About',
-                      subtitle: "Learn more about Ziar'App",
-                    ),
-                    SettingsItem(
-                      onTap: () {
-                        _signOut(context);
-                      },
-                      icons: Icons.info_rounded,
-                      iconStyle: IconStyle(backgroundColor: Colors.purple),
+                      onTap: () => _signOut(context),
+                      icons: Icons.logout,
+                      iconStyle: IconStyle(
+                        iconsColor: Colors.deepPurpleAccent,
+                        withBackground: true,
+                        backgroundColor: Colors.white,
+                      ),
                       title: 'Sign Out',
                     ),
                   ],

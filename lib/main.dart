@@ -74,18 +74,14 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-    checkAuthStatus();
-  }
-
-  Future<void> checkAuthStatus() async {
-    final storedToken = await _secureStorage.read(key: 'auth_token');
-    print("Auth Token: $storedToken");
-    if (storedToken != null) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => MyHomePage()),
-      );
-    }
+    FirebaseAuth.instance.authStateChanges().listen((User? user) {
+      if (user != null) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => MyHomePage()),
+        );
+      }
+    });
   }
 
   // Sign in with Google
@@ -129,31 +125,33 @@ class _LoginPageState extends State<LoginPage> {
 
     final firebaseIdToken = await user.getIdToken();
     final requestBody = {
-      'provider': 'firebase',
       'firebase_token': firebaseIdToken,
       'email': user.email,
-      'name': user.displayName,
     };
 
-    final response = await http.post(
-      Uri.parse('https://your-backend-url.com/auth/login'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(requestBody),
-    );
-
-    if (response.statusCode == 200) {
-      final responseData = jsonDecode(response.body);
-      await _secureStorage.write(
-        key: 'auth_token',
-        value: responseData['token'],
+    try {
+      final response = await http.post(
+        Uri.parse('${EnvConfig.localUrl}/auth/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(requestBody),
       );
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => MyHomePage()),
-      );
-    } else {
-      log('Backend Authentication Failed: ${response.statusCode}');
+      print("\n\n*******************");
+      print("Body: ${requestBody}");
+      print("Response Auth Login: ${response.body}");
+      print("*******************\n\n");
+
+      if (response.statusCode == 200) {
+        // ✅ Navigate to MyHomePage after successful authentication
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => MyHomePage()),
+        );
+      } else {
+        log('Backend Authentication Failed: ${response.body}');
+      }
+    } catch (e) {
+      log('Error sending token to backend: $e');
     }
   }
 
@@ -206,10 +204,6 @@ class _LoginPageState extends State<LoginPage> {
                     onPressed: () {
                       _signInWithGoogle(context);
                     },
-                    child: Text(
-                      "Sign in with Google",
-                      style: TextStyle(fontSize: 20),
-                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor:
                           Colors.white, // Google sign-in button color
@@ -219,8 +213,23 @@ class _LoginPageState extends State<LoginPage> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min, // Keep the button compact
+                      children: [
+                        Image.asset(
+                          "assets/img/google.png",
+                          height: 24, // Adjust the height as needed
+                        ),
+                        SizedBox(width: 8), // Space between icon and text
+                        Text(
+                          "Sign in with Google",
+                          style: TextStyle(fontSize: 20, color: Colors.black),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
+
                 SizedBox(height: 20),
                 SignInWithAppleButton(
                   onPressed: () {
