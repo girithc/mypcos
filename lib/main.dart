@@ -136,10 +136,10 @@ class _LoginPageState extends State<LoginPage> {
         body: jsonEncode(requestBody),
       );
 
-      print("\n\n*******************");
-      print("Body: ${requestBody}");
-      print("Response Auth Login: ${response.body}");
-      print("*******************\n\n");
+      //print("\n\n*******************");
+      //print("Body: ${requestBody}");
+      //print("Response Auth Login: ${response.body}");
+      // print("*******************\n\n");
 
       if (response.statusCode == 200) {
         // ✅ Navigate to MyHomePage after successful authentication
