@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:roo_mobile/ui/events.dart';
 
 class DetailsScreen extends StatelessWidget {

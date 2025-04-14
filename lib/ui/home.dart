@@ -1,10 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:roo_mobile/ui/bottom_sheet.dart';
-import 'package:roo_mobile/ui/chat.dart';
-import 'package:roo_mobile/ui/settings.dart';
 
 class Course {
   final String title, description, iconSrc;
@@ -13,7 +10,7 @@ class Course {
   Course({
     required this.title,
     this.description = 'Build and animate an iOS app from scratch',
-    this.iconSrc = "assets/icons/ios.svg",
+    this.iconSrc = "assets/img/google.png",
     this.color = const Color(0xFF7553F6),
   });
 }
@@ -22,24 +19,19 @@ final List<Course> courses = [
   Course(title: "Animations in SwiftUI", color: Colors.white),
   Course(
     title: "Animations in Flutter",
-    iconSrc: "assets/icons/code.svg",
+    iconSrc: "assets/img/google.png",
     color: const Color.fromARGB(255, 103, 2, 255),
   ),
 ];
 
 final List<Course> recentCourses = [
-  Course(title: "State Machine", color: Colors.deepPurpleAccent),
+  Course(title: "Track Periods", color: Colors.deepPurpleAccent),
   Course(
-    title: "Animated Menu",
+    title: "How Are You Feeling ?",
     color: Colors.white,
-    iconSrc: "assets/icons/code.svg",
+    iconSrc: "assets/img/google.png",
   ),
-  Course(title: "Flutter with Rive"),
-  Course(
-    title: "Animated Menu",
-    color: Colors.white,
-    iconSrc: "assets/icons/code.svg",
-  ),
+  Course(title: "Progress <>"),
 ];
 
 class CourseCard extends StatelessWidget {
@@ -47,7 +39,7 @@ class CourseCard extends StatelessWidget {
     super.key,
     required this.title,
     this.color = const Color(0xFF7553F6),
-    this.iconSrc = "assets/icons/ios.svg",
+    this.iconSrc = "assets/img/google.png",
   });
 
   final String title, iconSrc;
@@ -129,7 +121,6 @@ class CourseCard extends StatelessWidget {
               ),
             ),
           ),
-          SvgPicture.asset(iconSrc),
         ],
       ),
     );
@@ -138,70 +129,104 @@ class CourseCard extends StatelessWidget {
 
 class SecondaryCourseCard extends StatelessWidget {
   const SecondaryCourseCard({
-    super.key,
+    Key? key,
     required this.title,
-    this.iconsSrc = "assets/icons/ios.svg",
+    this.iconsSrc = "assets/img/google.png",
     this.colorl = const Color(0xFF7553F6),
-  });
+    this.index,
+  }) : super(key: key);
 
   final String title, iconsSrc;
   final Color colorl;
+  final int? index;
 
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
     final screenWidth = mediaQuery.size.width;
 
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: screenWidth * 0.05,
-        vertical: screenWidth * 0.04,
-      ),
-      decoration: BoxDecoration(
-        color: colorl,
-        borderRadius: BorderRadius.all(Radius.circular(screenWidth * 0.02)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                    color:
-                        colorl == Colors.white
-                            ? Colors.deepPurpleAccent
-                            : Colors.white,
-                    fontWeight: FontWeight.w600,
+    // Define a list of custom colors for the trailing icon.
+    final List<Color> trailingColors = [
+      Colors.red,
+      Colors.orange,
+      Colors.green,
+      Colors.blue,
+      Colors.purple,
+    ];
+
+    // Define a list of custom trailing icons.
+    final List<IconData> trailingIcons = [
+      Icons.star,
+      Icons.favorite,
+      Icons.lightbulb,
+      Icons.ac_unit,
+      Icons.access_alarm,
+    ];
+
+    // Use the given index (defaulting to 0) to choose the trailing color and icon.
+    final int currentIndex = index ?? 0;
+    final Color trailingColor =
+        trailingColors[currentIndex % trailingColors.length];
+    final IconData trailingIcon =
+        trailingIcons[currentIndex % trailingIcons.length];
+
+    return GestureDetector(
+      onTap: () {
+        if (title.toLowerCase().contains('period')) {
+          showPeriodCalendarBottomSheet(context);
+        } else if (title.toLowerCase().contains('feeling')) {
+          showMoodTrackerBottomSheet(context);
+        }
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: screenWidth * 0.05,
+          vertical: screenWidth * 0.04,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.all(Radius.circular(screenWidth * 0.02)),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                      color: Colors.deepPurpleAccent.shade200,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "Watch video - 15 mins",
-                  style: TextStyle(
-                    color:
-                        colorl == Colors.white
-                            ? Colors.deepPurple
-                            : Colors.white60,
-                    fontSize: 16,
+                  const SizedBox(height: 4),
+                  Text(
+                    "Watch video - 15 mins",
+                    style: TextStyle(
+                      color: Colors.deepPurpleAccent.shade100,
+                      fontSize: 16,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(
-            height: 40,
-            child: VerticalDivider(color: Colors.white70),
-          ),
-          const SizedBox(width: 8),
-          SvgPicture.asset(iconsSrc),
-        ],
+
+            const SizedBox(width: 8),
+            // Trailing circle showing rotating color and icon.
+            CircleAvatar(
+              backgroundColor: Colors.deepPurpleAccent.shade100,
+              radius: 16,
+              child: Icon(Icons.airplane_ticket, size: 16, color: Colors.white),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
+
+// Example implementation for showMoodTrackerBottomSheet.
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -211,10 +236,35 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final ScrollController _scrollController = ScrollController();
+  int _focusedIndex = 0;
+
   @override
   void initState() {
     super.initState();
     print(FirebaseAuth.instance.currentUser.toString());
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    double scrollOffset = _scrollController.offset;
+    double cardWidth =
+        MediaQuery.of(context).size.width * 0.1 +
+        MediaQuery.of(context).size.height * 0.03; // Card width + padding
+
+    int newIndex = (scrollOffset / cardWidth).round();
+
+    if (newIndex != _focusedIndex && newIndex < courses.length) {
+      setState(() {
+        _focusedIndex = newIndex;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Widget build(BuildContext context) {
@@ -270,23 +320,24 @@ class _HomePageState extends State<HomePage> {
               ),
 
               SingleChildScrollView(
+                controller: _scrollController,
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children:
-                      courses
-                          .map(
-                            (course) => Padding(
-                              padding: EdgeInsets.only(
-                                left: screenHeight * 0.03,
-                              ),
-                              child: CourseCard(
-                                title: course.title,
-                                iconSrc: course.iconSrc,
-                                color: course.color,
-                              ),
-                            ),
-                          )
-                          .toList(),
+                      courses.asMap().entries.map((entry) {
+                        int index = entry.key;
+                        var course = entry.value;
+                        bool isFocused = index == _focusedIndex;
+
+                        return Padding(
+                          padding: EdgeInsets.only(left: screenHeight * 0.03),
+                          child: CourseCard(
+                            title: course.title,
+                            iconSrc: course.iconSrc,
+                            color: isFocused ? Color(0xFF7553F6) : Colors.white,
+                          ),
+                        );
+                      }).toList(),
                 ),
               ),
               Padding(
@@ -308,11 +359,7 @@ class _HomePageState extends State<HomePage> {
                     right: screenHeight * 0.03,
                     bottom: screenHeight * 0.03,
                   ),
-                  child: SecondaryCourseCard(
-                    title: course.title,
-                    iconsSrc: course.iconSrc,
-                    colorl: course.color,
-                  ),
+                  child: SecondaryCourseCard(title: course.title),
                 ),
               ),
             ],

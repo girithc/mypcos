@@ -1,18 +1,28 @@
+import 'dart:convert';
+
 import 'package:babstrap_settings_screen/babstrap_settings_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart' as http;
 import 'package:roo_mobile/main.dart';
+import 'package:roo_mobile/utils/constants.dart';
 
-class SettingsPageContent extends StatelessWidget {
+class SettingsPageContent extends StatefulWidget {
   final ScrollController scrollController;
-
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final _secureStorage = const FlutterSecureStorage();
 
   SettingsPageContent({Key? key, required this.scrollController})
     : super(key: key);
+
+  @override
+  State<SettingsPageContent> createState() => _SettingsPageContentState();
+}
+
+class _SettingsPageContentState extends State<SettingsPageContent> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  final _secureStorage = const FlutterSecureStorage();
 
   Future<void> _signOut(BuildContext context) async {
     await _auth.signOut();
@@ -23,6 +33,45 @@ class SettingsPageContent extends StatelessWidget {
       MaterialPageRoute(builder: (context) => LoginPage()),
       (Route<dynamic> route) => false, // Remove all routes from stack
     );
+  }
+
+  Future<void> _fetchUserDetails() async {
+    try {
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) {
+        print("No user is signed in.");
+        return;
+      }
+      // Get the Firebase token.
+      final firebaseToken = await currentUser.getIdToken();
+      final email = currentUser.email;
+      // Replace the URL with your actual backend endpoint.
+      final Uri url = Uri.parse("${EnvConfig.baseUrl}/users/me");
+
+      // Build the request body.
+      final Map<String, dynamic> requestBody = {
+        'firebase_token': firebaseToken,
+        'email': email,
+      };
+
+      // Send the POST request.
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(requestBody),
+      );
+
+      // Print the response to the console.
+      print("Response from /users/me: ${response.body}");
+    } catch (e) {
+      print("Error fetching user details: $e");
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserDetails(); // Fetch user details when the widget is initialized
   }
 
   @override
@@ -55,22 +104,25 @@ class SettingsPageContent extends StatelessWidget {
           ),
           Expanded(
             child: ListView(
-              controller: scrollController,
+              controller: widget.scrollController,
               children: [
-                SmallUserCard(
-                  userProfilePic: const AssetImage(
-                    "assets/img/profile_pic.png",
-                  ),
-                  cardColor: Colors.deepPurpleAccent.shade100,
-                  cardRadius: 12.0,
-                  backgroundMotifColor: Colors.white,
-                  onTap: () => print("User card tapped"),
-                  userName: userEmail,
-                  userNameStyle: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    fontStyle: FontStyle.italic,
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: SmallUserCard(
+                    userProfilePic: const AssetImage(
+                      "assets/img/profile_pic.png",
+                    ),
+                    cardColor: Colors.grey.shade100,
+                    cardRadius: 12.0,
+                    backgroundMotifColor: Colors.deepPurpleAccent.shade100,
+                    onTap: () => print("User card tapped"),
+                    userName: userEmail,
+                    userNameStyle: const TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      fontStyle: FontStyle.italic,
+                    ),
                   ),
                 ),
                 SettingsGroup(

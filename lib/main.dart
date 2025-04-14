@@ -9,7 +9,6 @@ import 'package:flashy_tab_bar2/flashy_tab_bar2.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
@@ -19,8 +18,8 @@ import 'package:roo_mobile/ui/chat.dart';
 import 'package:roo_mobile/ui/chat_home.dart';
 import 'package:roo_mobile/ui/events.dart';
 import 'package:roo_mobile/ui/home.dart';
-import 'package:roo_mobile/ui/library.dart';
-import 'package:roo_mobile/ui/track.dart';
+import 'package:roo_mobile/ui/library/library.dart';
+import 'package:roo_mobile/ui/track/track_page.dart';
 import 'package:roo_mobile/utils/constants.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
@@ -68,8 +67,6 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final GoogleSignIn _googleSignIn = GoogleSignIn();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final _secureStorage = const FlutterSecureStorage();
 
   @override
   void initState() {
@@ -131,7 +128,7 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final response = await http.post(
-        Uri.parse('${EnvConfig.localUrl}/auth/login'),
+        Uri.parse('${EnvConfig.baseUrl}/auth-login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(requestBody),
       );
@@ -253,140 +250,6 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-class OnBoardingPage extends StatefulWidget {
-  const OnBoardingPage({super.key});
-
-  @override
-  OnBoardingPageState createState() => OnBoardingPageState();
-}
-
-class OnBoardingPageState extends State<OnBoardingPage> {
-  final introKey = GlobalKey<IntroductionScreenState>();
-
-  void _onIntroEnd(context) {
-    Navigator.of(
-      context,
-    ).pushReplacement(MaterialPageRoute(builder: (_) => const MyHomePage()));
-  }
-
-  Widget _buildImage(String assetName, [double width = 350]) {
-    return Image.asset('assets/img/$assetName', width: width);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    const bodyStyle = TextStyle(fontSize: 19.0);
-
-    const pageDecoration = PageDecoration(
-      titleTextStyle: TextStyle(fontSize: 28.0, fontWeight: FontWeight.w700),
-      bodyTextStyle: bodyStyle,
-      bodyPadding: EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 16.0),
-      pageColor: Colors.white,
-      imagePadding: EdgeInsets.zero,
-    );
-
-    return IntroductionScreen(
-      key: introKey,
-      globalBackgroundColor: Colors.white,
-      allowImplicitScrolling: true,
-      autoScrollDuration: 3000,
-      infiniteAutoScroll: true,
-      globalHeader: Align(
-        alignment: Alignment.topRight,
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 16, right: 16),
-            child: _buildImage('profile_pic.png', 100),
-          ),
-        ),
-      ),
-
-      pages: [
-        PageViewModel(
-          title: "Fractional shares",
-          body:
-              "Instead of having to buy an entire share, invest any amount you want.",
-          image: _buildImage('profile_pic.png'),
-          decoration: pageDecoration,
-        ),
-        PageViewModel(
-          title: "Full Screen Page",
-          body:
-              "Pages can be full screen as well.\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc id euismod lectus, non tempor felis. Nam rutrum rhoncus est ac venenatis.",
-          backgroundImage: backgroundImage,
-          decoration: pageDecoration.copyWith(
-            contentMargin: const EdgeInsets.symmetric(horizontal: 16),
-            bodyFlex: 2,
-            imageFlex: 3,
-            safeArea: 100,
-          ),
-        ),
-      ],
-      onDone: () => _onIntroEnd(context),
-      onSkip: () => _onIntroEnd(context), // You can override onSkip callback
-      showSkipButton: true,
-      skipOrBackFlex: 0,
-      nextFlex: 0,
-      showBackButton: false,
-      //rtl: true, // Display as right-to-left
-      back: const Icon(Icons.arrow_back),
-      skip: const Text('Skip', style: TextStyle(fontWeight: FontWeight.w600)),
-      next: const Icon(Icons.arrow_forward),
-      done: const Text('Done', style: TextStyle(fontWeight: FontWeight.w600)),
-      curve: Curves.fastLinearToSlowEaseIn,
-      controlsMargin: const EdgeInsets.all(16),
-      controlsPadding:
-          kIsWeb
-              ? const EdgeInsets.all(12.0)
-              : const EdgeInsets.fromLTRB(8.0, 4.0, 8.0, 4.0),
-      dotsDecorator: const DotsDecorator(
-        size: Size(10.0, 10.0),
-        color: Color(0xFFBDBDBD),
-        activeSize: Size(22.0, 10.0),
-        activeShape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(25.0)),
-        ),
-      ),
-      dotsContainerDecorator: const ShapeDecoration(
-        color: Colors.black87,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(8.0)),
-        ),
-      ),
-    );
-  }
-}
-
-class HomePage1 extends StatelessWidget {
-  const HomePage1({super.key});
-
-  void _onBackToIntro(context) {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const OnBoardingPage()),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Home')),
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text("This is the screen after Introduction"),
-            const SizedBox(height: 16.0),
-            ElevatedButton(
-              onPressed: () => _onBackToIntro(context),
-              child: const Text('Back to Introduction'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key}) : super(key: key);
 
@@ -400,22 +263,12 @@ class MyHomePageState extends State<MyHomePage> {
 
   /// Use a getter instead of a final list
   List<Widget> get tabItems => [
-    HomePage(),
+    TrackPage(), //HomePage(),
     HomeScreen(),
-    showChatHome ? ChatHomePage() : ChatPage(), // ✅ Dynamic switching
-    TrackPage(),
+    ChatPage(), // ✅ Dynamic switching
+    ChatHomePage(),
     LibraryPage(),
   ];
-
-  void _onSearchPressed() {
-    // Navigate to Chat page and remove the bottom nav bar
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ChatPage(),
-      ), // Replace with your actual Chat page
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -423,6 +276,7 @@ class MyHomePageState extends State<MyHomePage> {
       body: tabItems[selectedIndex], // Display the selected page
       extendBody: true,
       bottomNavigationBar: FlashyTabBar(
+        height: 50,
         animationCurve: Curves.linear,
         selectedIndex: selectedIndex,
         iconSize: 30,
@@ -434,59 +288,14 @@ class MyHomePageState extends State<MyHomePage> {
         },
         items: [
           FlashyTabBarItem(icon: Icon(Icons.home), title: Text('Home')),
-          FlashyTabBarItem(icon: Icon(Icons.event), title: Text('Events')),
+          FlashyTabBarItem(icon: Icon(Icons.store), title: Text('Store')),
+          FlashyTabBarItem(icon: Icon(Icons.auto_awesome), title: Text('Roo')),
+
           FlashyTabBarItem(icon: Icon(Icons.chat), title: Text('Chat')),
 
           FlashyTabBarItem(
-            icon: Icon(Icons.equalizer_outlined),
-            title: Text('Track'),
-          ),
-
-          FlashyTabBarItem(
-            icon: Icon(Icons.video_library_outlined),
+            icon: Icon(Icons.collections),
             title: Text('Explore'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// add controller to check weather index through change or not. in page 1
-class Page1 extends StatelessWidget {
-  final NotchBottomBarController? controller;
-
-  const Page1({Key? key, this.controller}) : super(key: key);
-
-  void _onBackToIntro(context) {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const OnBoardingPage()),
-    );
-  }
-
-  void _navigateToChatPage(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => ChatPage()),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text("This is the screen after Introduction"),
-          const SizedBox(height: 16.0),
-          ElevatedButton(
-            onPressed: () => _onBackToIntro(context),
-            child: const Text('Back to Introduction'),
-          ),
-          const SizedBox(height: 16.0),
-          ElevatedButton(
-            onPressed: () => _navigateToChatPage(context),
-            child: const Text('Go to Chat Page'),
           ),
         ],
       ),

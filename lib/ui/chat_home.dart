@@ -1,10 +1,8 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:roo_mobile/main.dart';
 import 'package:roo_mobile/ui/chat.dart';
 
 class ChatHomePage extends StatefulWidget {

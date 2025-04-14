@@ -4,6 +4,7 @@ import 'package:calendar_timeline/calendar_timeline.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:roo_mobile/ui/track/components/period/period.dart';
 import 'package:roo_mobile/ui/settings.dart';
 
 void showDietaryPreferencesBottomSheet(BuildContext context) {
@@ -507,4 +508,202 @@ void showSettingsBottomSheet(BuildContext context) {
       );
     },
   );
+}
+
+//Period Tracker
+
+void showPeriodCalendarBottomSheet(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent, // Important to show rounded corners
+    builder: (BuildContext context) {
+      return ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+        child: DraggableScrollableSheet(
+          initialChildSize: 0.8,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (BuildContext context, ScrollController scrollController) {
+            return PeriodCalendarSheetContent(
+              scrollController: scrollController,
+            );
+          },
+        ),
+      );
+    },
+  );
+}
+
+/// Call this function to show the Mood Tracker bottom sheet.
+void showMoodTrackerBottomSheet(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent, // To allow the gradient to show
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (BuildContext context) {
+      return DraggableScrollableSheet(
+        initialChildSize:
+            0.65, // Increased from 0.75 so more content appears immediately
+        minChildSize: 0.5,
+        maxChildSize: 0.8,
+        expand: false,
+        builder: (BuildContext context, ScrollController scrollController) {
+          return MoodTrackerSheetContent(scrollController: scrollController);
+        },
+      );
+    },
+  );
+}
+
+/// The content widget for the Mood Tracker bottom sheet.
+class MoodTrackerSheetContent extends StatefulWidget {
+  final ScrollController scrollController;
+  const MoodTrackerSheetContent({Key? key, required this.scrollController})
+    : super(key: key);
+
+  @override
+  _MoodTrackerSheetContentState createState() =>
+      _MoodTrackerSheetContentState();
+}
+
+class _MoodTrackerSheetContentState extends State<MoodTrackerSheetContent> {
+  // Change from a single selected mood to a set of selected moods.
+  final Set<String> selectedMoods = {};
+
+  final List<Map<String, String>> moods = [
+    {"emoji": "😀", "label": "Happy"},
+    {"emoji": "😞", "label": "Sad"},
+    {"emoji": "😡", "label": "Angry"},
+    {"emoji": "😱", "label": "Anxious"},
+    {"emoji": "😌", "label": "Relaxed"},
+    {"emoji": "😔", "label": "Disappointed"},
+    {"emoji": "😐", "label": "Neutral"},
+    {"emoji": "🤩", "label": "Excited"},
+    {"emoji": "😕", "label": "Confused"},
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      // Gradient background with rounded top corners.
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.pink.shade100, Colors.purple.shade100],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: ListView(
+        controller: widget.scrollController,
+        padding: const EdgeInsets.all(20),
+        children: [
+          // Small handle at the top.
+          Center(
+            child: Container(
+              width: 50,
+              height: 5,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade400,
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Center(
+            child: Text(
+              "How's Your Moooood?",
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+          ),
+          const SizedBox(height: 20),
+          // Wrap the mood options in a responsive layout.
+          Wrap(
+            spacing: 20,
+            runSpacing: 20,
+            alignment: WrapAlignment.center,
+            children:
+                moods.map((mood) {
+                  final bool isSelected = selectedMoods.contains(mood['label']);
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        if (selectedMoods.contains(mood['label'])) {
+                          selectedMoods.remove(mood['label']);
+                        } else {
+                          selectedMoods.add(mood['label']!);
+                        }
+                      });
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      width: 100,
+                      height: 100,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color:
+                            isSelected
+                                ? Colors.white
+                                : Colors.white.withOpacity(0.4),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow:
+                            isSelected
+                                ? [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.2),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 5),
+                                  ),
+                                ]
+                                : [],
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            mood['emoji']!,
+                            style: const TextStyle(fontSize: 32),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            mood['label']!,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+          ),
+          const SizedBox(height: 30),
+          ElevatedButton(
+            onPressed: () {
+              debugPrint('Moods selected: ${selectedMoods.toList()}');
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.pinkAccent,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+            ),
+            child: const Center(
+              child: Text("Save Mood", style: TextStyle(fontSize: 18)),
+            ),
+          ),
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
 }
