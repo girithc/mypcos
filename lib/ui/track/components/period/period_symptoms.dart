@@ -9,16 +9,23 @@ import 'package:simple_animated_button/elevated_layer_button.dart';
 
 class PeriodSymptomsPage extends StatefulWidget {
   final int periodId;
-  const PeriodSymptomsPage({super.key, required this.periodId});
+  final VoidCallback onDone; // callback to toggle back
+
+  const PeriodSymptomsPage({
+    Key? key,
+    required this.periodId,
+    required this.onDone,
+  }) : super(key: key);
 
   @override
-  State<PeriodSymptomsPage> createState() => _PeriodSymptomsPageState();
+  _PeriodSymptomsPageState createState() => _PeriodSymptomsPageState();
 }
 
 class _PeriodSymptomsPageState extends State<PeriodSymptomsPage> {
   // Holds the API‐returned period record
   String? _startDate;
   String? _endDate;
+  bool _isLoading = false;
   // Holds the API‐returned severity (defaults to false)
   Map<String, bool> _selectedSymptoms = {};
   final List<String> _symptomOptions = [
@@ -72,6 +79,11 @@ class _PeriodSymptomsPageState extends State<PeriodSymptomsPage> {
   }
 
   Future<void> _updateSymptoms() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
     final user = FirebaseAuth.instance.currentUser;
     final token = await user?.getIdToken();
     if (token == null) return;
@@ -90,16 +102,27 @@ class _PeriodSymptomsPageState extends State<PeriodSymptomsPage> {
     print('Response: ${response.body}');
 
     if (response.statusCode == 200) {
-      Navigator.of(context).pop(true); // or show success
+      Navigator.of(context).pop(); // dismiss spinner
+
+      _isLoading = false;
+
+      widget.onDone(); // ← toggle back to calendar
     } else {
+      Navigator.of(context).pop(); // dismiss spinner
+
+      _isLoading = false;
+
       // handle error...
     }
+    _isLoading = false;
   }
 
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return Center(child: CircularProgressIndicator());
+      return Center(
+        child: CircularProgressIndicator(color: Colors.deepPurpleAccent),
+      );
     }
 
     // format range
@@ -183,7 +206,6 @@ class _PeriodSymptomsPageState extends State<PeriodSymptomsPage> {
             ),
           ),
 
-          const SizedBox(height: 24),
           Center(
             child: ElevatedLayerButton(
               onClick: _updateSymptoms,

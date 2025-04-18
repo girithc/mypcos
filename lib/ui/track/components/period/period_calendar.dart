@@ -31,7 +31,7 @@ class PeriodCalendarSheetContent extends StatefulWidget {
 
 class _PeriodCalendarSheetContentState
     extends State<PeriodCalendarSheetContent> {
-  final Set<DateTime> _periodDates = {};
+  Set<DateTime> _periodDates = {};
   DateTime _focusedDay = DateTime.now();
   final DateTime _firstDay = DateTime.now().subtract(Duration(days: 3650));
   final DateTime _lastDay = DateTime.now().add(Duration(days: 365));
@@ -48,9 +48,15 @@ class _PeriodCalendarSheetContentState
   }
 
   Future<void> _sendFullMonthPeriodData() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
     final now = _focusedDay;
     final year = now.year;
     final month = now.month;
+    _isLoading = true;
 
     final user = FirebaseAuth.instance.currentUser;
     final firebaseToken = await user?.getIdToken();
@@ -113,15 +119,21 @@ class _PeriodCalendarSheetContentState
       );
 
       if (response.statusCode == 200) {
+        Navigator.of(context).pop(); // Close the loading dialog
         final Map<String, dynamic> responseData = jsonDecode(response.body);
         _selectedPeriodId = responseData["period_id"];
+        _isLoading = false;
         _toggleSymptomsInput(true);
       } else {
+        Navigator.of(context).pop(); // Close the loading dialog
+
         print("Failed to sync full calendar: ${response.statusCode}");
       }
     } catch (e) {
       print("Error syncing calendar: $e");
+      _isLoading = false;
     }
+    _isLoading = false;
   }
 
   //PeriodLog? _selectedLog;
@@ -153,9 +165,18 @@ class _PeriodCalendarSheetContentState
   }
 
   Future<void> _fetchLast4MonthsPeriods() async {
+    setState(() {
+      _isLoading = true;
+    });
+
     final user = FirebaseAuth.instance.currentUser;
     final token = await user?.getIdToken();
-    if (token == null) return;
+    if (token == null) {
+      setState(() {
+        _isLoading = false;
+      });
+      return;
+    }
 
     try {
       final resp = await http.post(
@@ -164,19 +185,14 @@ class _PeriodCalendarSheetContentState
         body: jsonEncode({'firebase_token': token}),
       );
 
-      //print("Response: ${resp.body}");
-
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body) as Map<String, dynamic>;
         final periods = data['periods'] as List<dynamic>;
 
         final Set<DateTime> loadedDates = {};
-
         for (var p in periods) {
-          // parse start/end
           final start = DateTime.parse(p['start_date']);
           final end = DateTime.parse(p['end_date']);
-          // fill in each day in that range
           for (
             var d = start;
             !d.isAfter(end);
@@ -184,18 +200,20 @@ class _PeriodCalendarSheetContentState
           ) {
             loadedDates.add(DateTime(d.year, d.month, d.day));
           }
-          _isLoading = false;
         }
 
         setState(() {
-          _periodDates.clear();
-          _periodDates.addAll(loadedDates);
+          _periodDates = loadedDates;
         });
       } else {
         debugPrint('Error fetching periods: ${resp.statusCode}');
       }
     } catch (e) {
       debugPrint('Exception fetching periods: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -210,6 +228,12 @@ class _PeriodCalendarSheetContentState
       );
       _selectedDay = null;
     });
+  }
+
+  bool _hasDatesThisMonth() {
+    return _periodDates.any(
+      (d) => d.year == _focusedDay.year && d.month == _focusedDay.month,
+    );
   }
 
   Future<void> _onDaySelected(DateTime selectedDay, DateTime focusedDay) async {
@@ -307,7 +331,9 @@ class _PeriodCalendarSheetContentState
                                   ),
                               onDaySelected: _onDaySelected,
                               onPageChanged: (day) {
-                                _focusedDay = day;
+                                setState(() {
+                                  _focusedDay = day;
+                                });
                               },
                               calendarStyle: CalendarStyle(
                                 isTodayHighlighted: true,
@@ -379,7 +405,7 @@ class _PeriodCalendarSheetContentState
                         ),
                       ),
                       const SizedBox(height: 10),
-                      if (_selectedDay != null) ...[
+                      if (_hasDatesThisMonth()) ...[
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 24,
@@ -449,7 +475,10 @@ class _PeriodCalendarSheetContentState
                         ),
                       ],
                     ] else ...[
-                      PeriodSymptomsPage(periodId: _selectedPeriodId),
+                      PeriodSymptomsPage(
+                        periodId: _selectedPeriodId,
+                        onDone: () => _toggleSymptomsInput(false),
+                      ),
                     ],
                   ],
                 ),

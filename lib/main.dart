@@ -298,6 +298,7 @@ class _LoginPageState extends State<LoginPage> {
             Image.asset("assets/img/women-arms.jpg"),
             Column(
               children: [
+                /*
                 Center(
                   child: ElevatedButton(
                     onPressed: () {
@@ -330,6 +331,9 @@ class _LoginPageState extends State<LoginPage> {
                 ),
 
                 SizedBox(height: 20),
+                */
+                SizedBox(height: 40),
+
                 SignInWithAppleButton(
                   onPressed: () {
                     _signInWithApple(context);
@@ -377,24 +381,30 @@ class MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       body: tabItems[selectedIndex], // Display the selected page
       extendBody: true,
-      bottomNavigationBar: FlashyTabBar(
+      bottomNavigationBar: // In your PeriodCalendarSheetContent build(), update the FlashyTabBar section:
+          FlashyTabBar(
         height: 50,
         animationCurve: Curves.linear,
         selectedIndex: selectedIndex,
         iconSize: 30,
-        showElevation: false, // Removes appBar elevation
+        showElevation: false,
         onItemSelected: (index) {
-          setState(() {
-            selectedIndex = index; // Update selected index
-          });
+          if (index == 2) {
+            // 'Roo' tab pressed: navigate outside current tabs
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => ChatPage()));
+          } else {
+            setState(() {
+              selectedIndex = index; // switch tabs normally
+            });
+          }
         },
         items: [
           FlashyTabBarItem(icon: Icon(Icons.home), title: Text('Home')),
           FlashyTabBarItem(icon: Icon(Icons.store), title: Text('Store')),
           FlashyTabBarItem(icon: Icon(Icons.auto_awesome), title: Text('Roo')),
-
           FlashyTabBarItem(icon: Icon(Icons.chat), title: Text('Chat')),
-
           FlashyTabBarItem(
             icon: Icon(Icons.collections),
             title: Text('Explore'),

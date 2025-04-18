@@ -208,8 +208,8 @@ class _ChatPageState extends State<ChatPage> {
         body: body,
       );
 
-      print(response.statusCode);
-      print(response.body);
+      //print(response.statusCode);
+      //print(response.body);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -259,7 +259,24 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(toolbarHeight: 10.0),
+    appBar: AppBar(
+      backgroundColor: Colors.white,
+      elevation: 0,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
+        onPressed: () => Navigator.of(context).pop(),
+      ),
+      // optionally center your title, or leave title blank
+      title: const SizedBox.shrink(),
+      actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 16.0),
+          child: Center(
+            child: Text('Roo', style: largeText(color: Colors.deepPurple)),
+          ),
+        ),
+      ],
+    ),
     body: Chat(
       messages: _messages,
       onAttachmentPressed: _handleAttachmentPressed,
