@@ -19,12 +19,12 @@ class Action {
 // Trending category gradient: light blue -> indigo
 final List<Action> Actions = [
   Action(
-    title: "Animate SwiftUI",
+    title: "Trendy 1",
     color: Colors.lightBlue.shade200,
     icon: Icon(Icons.apple, color: Colors.white),
   ),
   Action(
-    title: "Animate Flutter",
+    title: "Trendy 2",
     color: Colors.indigo.shade400,
     icon: Icon(Icons.flutter_dash, color: Colors.white),
   ),

@@ -4,7 +4,7 @@ import 'package:calendar_timeline/calendar_timeline.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:roo_mobile/ui/track/components/period/period.dart';
+import 'package:roo_mobile/ui/track/components/period/period_calendar.dart';
 import 'package:roo_mobile/ui/settings.dart';
 
 void showDietaryPreferencesBottomSheet(BuildContext context) {
@@ -251,7 +251,7 @@ void showCalendarBottomSheet(BuildContext context) {
             ),
             Container(
               padding: EdgeInsets.all(16),
-              child: Text("statistics", style: TextStyle(fontSize: 18)),
+              child: Text("Tasks To Do", style: TextStyle(fontSize: 18)),
             ),
           ],
         ),
@@ -510,27 +510,24 @@ void showSettingsBottomSheet(BuildContext context) {
   );
 }
 
-//Period Tracker
-
 void showPeriodCalendarBottomSheet(BuildContext context) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.transparent, // Important to show rounded corners
+    backgroundColor: Colors.transparent, // To allow the gradient to show
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
     builder: (BuildContext context) {
-      return ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
-        child: DraggableScrollableSheet(
-          initialChildSize: 0.8,
-          minChildSize: 0.5,
-          maxChildSize: 0.95,
-          expand: false,
-          builder: (BuildContext context, ScrollController scrollController) {
-            return PeriodCalendarSheetContent(
-              scrollController: scrollController,
-            );
-          },
-        ),
+      return DraggableScrollableSheet(
+        initialChildSize:
+            0.5, // Increased from 0.75 so more content appears immediately
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (BuildContext context, ScrollController scrollController) {
+          return PeriodCalendarSheetContent(scrollController: scrollController);
+        },
       );
     },
   );

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:roo_mobile/ui/bottom_sheet.dart';
-import 'package:roo_mobile/ui/track/components/period/period.dart';
+import 'package:roo_mobile/ui/track/components/period/period_calendar.dart';
 
 class SecondaryActionCard extends StatelessWidget {
   const SecondaryActionCard({

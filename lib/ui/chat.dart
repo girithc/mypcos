@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -12,6 +13,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mime/mime.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:roo_mobile/utils/constants.dart';
 import 'package:uuid/uuid.dart';
 
 class ChatPage extends StatefulWidget {
@@ -24,6 +26,7 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> {
   List<types.Message> _messages = [];
   final _user = const types.User(id: '82091008-a484-4a89-ae75-a22bf8d6f3ac');
+  final _auth = FirebaseAuth.instance;
 
   @override
   void initState() {
@@ -182,15 +185,64 @@ class _ChatPageState extends State<ChatPage> {
     });
   }
 
-  void _handleSendPressed(types.PartialText message) {
-    final textMessage = types.TextMessage(
+  void _handleSendPressed(types.PartialText message) async {
+    final userMessage = types.TextMessage(
       author: _user,
       createdAt: DateTime.now().millisecondsSinceEpoch,
       id: const Uuid().v4(),
       text: message.text,
     );
 
-    _addMessage(textMessage);
+    _addMessage(userMessage);
+
+    try {
+      final body = jsonEncode({
+        'q': message.text,
+        'firebase_token': await _auth.currentUser?.getIdToken(),
+      });
+      final uri = Uri.parse('${EnvConfig.baseUrl}/ask');
+
+      final response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      );
+
+      print(response.statusCode);
+      print(response.body);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final answer = data['answer'] ?? 'No answer found.';
+
+        final botMessage = types.TextMessage(
+          author: const types.User(id: 'bot'),
+          createdAt: DateTime.now().millisecondsSinceEpoch,
+          id: const Uuid().v4(),
+          text: answer,
+        );
+
+        _addMessage(botMessage);
+      } else {
+        _addMessage(
+          types.TextMessage(
+            author: const types.User(id: 'bot'),
+            createdAt: DateTime.now().millisecondsSinceEpoch,
+            id: const Uuid().v4(),
+            text: 'Oops! Server error (${response.statusCode}).',
+          ),
+        );
+      }
+    } catch (e) {
+      _addMessage(
+        types.TextMessage(
+          author: const types.User(id: 'bot'),
+          createdAt: DateTime.now().millisecondsSinceEpoch,
+          id: const Uuid().v4(),
+          text: 'Network error: $e',
+        ),
+      );
+    }
   }
 
   void _loadMessages() async {

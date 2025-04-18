@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:developer' show log;
 
-import 'package:animated_notch_bottom_bar/animated_notch_bottom_bar/animated_notch_bottom_bar.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -12,12 +11,10 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
-import 'package:introduction_screen/introduction_screen.dart';
 import 'package:roo_mobile/firebase_options.dart';
 import 'package:roo_mobile/ui/chat.dart';
 import 'package:roo_mobile/ui/chat_home.dart';
 import 'package:roo_mobile/ui/events.dart';
-import 'package:roo_mobile/ui/home.dart';
 import 'package:roo_mobile/ui/library/library.dart';
 import 'package:roo_mobile/ui/track/track_page.dart';
 import 'package:roo_mobile/utils/constants.dart';
@@ -53,8 +50,75 @@ class App extends StatelessWidget {
         scaffoldBackgroundColor:
             Colors.white, // Set scaffold background to white
       ),
-      home: const LoginPage(),
+      home: const AuthGate(),
     );
+  }
+}
+
+class AuthGate extends StatefulWidget {
+  const AuthGate({super.key});
+
+  @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
+  @override
+  void initState() {
+    super.initState();
+    _checkAuthStatus();
+  }
+
+  Future<void> _checkAuthStatus() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      _goToLogin();
+    } else {
+      print("User is logged in: ${user.email}");
+      final token = await user.getIdToken();
+      final response = await http.post(
+        Uri.parse('${EnvConfig.baseUrl}/auth-login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'firebase_token': token, 'email': user.email}),
+      );
+
+      print("\n\n*******************");
+      print("Response Auth Login: ${response.body}");
+      print("*******************\n\n");
+
+      if (response.statusCode == 200) {
+        _goToHome();
+      } else {
+        await FirebaseAuth.instance.signOut(); // kill bad session
+        _goToLogin();
+      }
+    }
+  }
+
+  void _goToHome() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => MyHomePage()),
+      );
+    });
+  }
+
+  void _goToLogin() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => LoginPage()),
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }
 
@@ -71,14 +135,6 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-    FirebaseAuth.instance.authStateChanges().listen((User? user) {
-      if (user != null) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => MyHomePage()),
-        );
-      }
-    });
   }
 
   // Sign in with Google
@@ -120,6 +176,22 @@ class _LoginPageState extends State<LoginPage> {
     final user = auth.user;
     if (user == null) return;
 
+    // 👇 Show the loading dialog before making the API call
+    showDialog(
+      context: context,
+      barrierDismissible: false, // prevent user from closing it
+      builder:
+          (context) => const AlertDialog(
+            content: Row(
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(width: 20),
+                Text("Logging in..."),
+              ],
+            ),
+          ),
+    );
+
     final firebaseIdToken = await user.getIdToken();
     final requestBody = {
       'firebase_token': firebaseIdToken,
@@ -133,23 +205,53 @@ class _LoginPageState extends State<LoginPage> {
         body: jsonEncode(requestBody),
       );
 
-      //print("\n\n*******************");
-      //print("Body: ${requestBody}");
-      //print("Response Auth Login: ${response.body}");
-      // print("*******************\n\n");
+      print("\n\n*******************");
+      print("Body: ${requestBody}");
+      print("Response Auth Login: ${response.body}");
+      print("*******************\n\n");
+
+      // 👇 Close the loading dialog
+      if (context.mounted) Navigator.of(context).pop();
 
       if (response.statusCode == 200) {
         // ✅ Navigate to MyHomePage after successful authentication
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => MyHomePage()),
-        );
+        if (context.mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => MyHomePage()),
+          );
+        }
       } else {
         log('Backend Authentication Failed: ${response.body}');
+        if (context.mounted) {
+          _showErrorDialog("Login failed. Please try again.");
+        }
       }
     } catch (e) {
+      if (context.mounted)
+        Navigator.of(context).pop(); // Ensure dialog is closed
       log('Error sending token to backend: $e');
+      if (context.mounted) {
+        _showErrorDialog("Network error. Please try again.");
+      }
     }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder:
+          (_) => AlertDialog(
+            title: const Text('Error'),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+    );
   }
 
   @override
