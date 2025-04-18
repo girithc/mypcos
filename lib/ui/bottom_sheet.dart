@@ -621,7 +621,7 @@ class _MoodTrackerSheetContentState extends State<MoodTrackerSheetContent> {
           const SizedBox(height: 20),
           // Wrap the mood options in a responsive layout.
           Wrap(
-            spacing: 20,
+            spacing: 10,
             runSpacing: 20,
             alignment: WrapAlignment.center,
             children:
