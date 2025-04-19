@@ -346,6 +346,7 @@ class _ChatPageState extends State<ChatPage> {
               height: 48,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               alignment: Alignment.centerLeft,
+              decoration: BoxDecoration(color: Colors.white),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [

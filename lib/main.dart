@@ -12,6 +12,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:roo_mobile/firebase_options.dart';
+import 'package:roo_mobile/ui/bottom_sheet.dart';
 import 'package:roo_mobile/ui/chat.dart';
 import 'package:roo_mobile/ui/chat_home.dart';
 import 'package:roo_mobile/ui/events.dart';
@@ -406,33 +407,7 @@ class MyHomePageState extends State<MyHomePage> {
         showElevation: false,
         onItemSelected: (index) {
           if (index == 2) {
-            showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              backgroundColor: Colors.transparent,
-              builder: (context) {
-                return DraggableScrollableSheet(
-                  expand: false,
-                  initialChildSize: 0.85,
-                  minChildSize: 0.6,
-                  maxChildSize: 0.95,
-                  builder: (context, scrollController) {
-                    return Container(
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(20),
-                        ), // 👈 Rounded top
-                      ),
-                      clipBehavior:
-                          Clip.antiAlias, // 👈 Ensures content respects radius
-                      child:
-                          ChatPage(), // ⬅️ Replace with the actual chat widget if needed
-                    );
-                  },
-                );
-              },
-            );
+            showChatBottomSheet(context);
           } else {
             setState(() {
               selectedIndex = index; // switch tabs normally

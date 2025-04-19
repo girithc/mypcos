@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:health/health.dart';
 
+enum HealthDataCardType { steps, calories, exerciseMinutes }
+
 class ActionCard extends StatefulWidget {
   const ActionCard({
     super.key,
     required this.title,
+    required this.type,
     this.color = const Color(0xFF7553F6),
     this.iconSrc = "assets/img/profile_pic.png",
   });
 
   final String title, iconSrc;
   final Color color;
+  final HealthDataCardType type;
 
   @override
   State<ActionCard> createState() => _ActionCardState();
@@ -76,6 +80,34 @@ class _ActionCardState extends State<ActionCard> {
         .fold(0.0, (sum, d) => sum + (d.value as num).toDouble());
   }
 
+  double _getProgressValue() {
+    switch (widget.type) {
+      case HealthDataCardType.steps:
+        return (_steps != null
+            ? (_steps! / 10000).clamp(0.0, 1.0)
+            : 0.0); // 10k step goal
+      case HealthDataCardType.calories:
+        return (_calories != null
+            ? (_calories! / 400).clamp(0.0, 1.0)
+            : 0.0); // 400 kcal goal
+      case HealthDataCardType.exerciseMinutes:
+        return (_exerciseMinutes != null
+            ? (_exerciseMinutes! / 30).clamp(0.0, 1.0)
+            : 0.0); // 30 min goal
+    }
+  }
+
+  String _getDisplayValue() {
+    switch (widget.type) {
+      case HealthDataCardType.steps:
+        return '${_steps ?? 0}';
+      case HealthDataCardType.calories:
+        return '${_calories?.toInt() ?? 0} cal';
+      case HealthDataCardType.exerciseMinutes:
+        return '${_exerciseMinutes?.toInt() ?? 0} min';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -98,7 +130,7 @@ class _ActionCardState extends State<ActionCard> {
           borderRadius: BorderRadius.all(Radius.circular(screenWidth * 0.05)),
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
               widget.title,
@@ -108,9 +140,36 @@ class _ActionCardState extends State<ActionCard> {
               ),
             ),
             const SizedBox(height: 10),
-            const Text(
-              "Tap to view health data",
-              style: TextStyle(color: Colors.deepPurpleAccent),
+            Expanded(
+              child: Center(
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SizedBox(
+                      height: screenWidth * 0.2,
+                      width: screenWidth * 0.2,
+                      child: CircularProgressIndicator(
+                        value: _getProgressValue(),
+                        backgroundColor: Colors.deepPurpleAccent.withOpacity(
+                          0.2,
+                        ),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          Colors.deepPurpleAccent,
+                        ),
+                        strokeWidth: 6.0,
+                      ),
+                    ),
+                    Text(
+                      _getDisplayValue(),
+                      style: const TextStyle(
+                        color: Colors.deepPurpleAccent,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),

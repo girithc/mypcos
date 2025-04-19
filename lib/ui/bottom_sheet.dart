@@ -713,57 +713,26 @@ void showChatBottomSheet(BuildContext context) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(
-        top: Radius.circular(20),
-      ), // Curved top borders
-    ),
-    builder: (BuildContext context) {
-      return Container(
-        height:
-            MediaQuery.of(context).size.height * 0.7, // 70% of screen height
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          color: Colors.white, // Background color of the bottom sheet
-        ),
-        child: Column(
-          children: [
-            // Header with "Roo" and close button
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'ROO',
-                    style: GoogleFonts.sriracha(
-                      // ✅ Use Rock Salt from Google Fonts
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: const Color.fromARGB(255, 106, 0, 255),
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.close,
-                      color: const Color.fromARGB(255, 106, 0, 255),
-                    ),
-                    onPressed:
-                        () => Navigator.of(context).pop(), // Close action
-                  ),
-                ],
-              ),
+    backgroundColor: Colors.transparent,
+    builder: (context) {
+      return DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.85,
+        minChildSize: 0.6,
+        maxChildSize: 0.95,
+        builder: (context, scrollController) {
+          return Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(20),
+              ), // 👈 Rounded top
             ),
-
-            // ChatPage with curved borders
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: ChatPage(), // Your chatPage widget
-              ),
-            ),
-          ],
-        ),
+            clipBehavior: Clip.antiAlias, // 👈 Ensures content respects radius
+            child:
+                ChatPage(), // ⬅️ Replace with the actual chat widget if needed
+          );
+        },
       );
     },
   );

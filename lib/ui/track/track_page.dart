@@ -16,6 +16,7 @@ class TrackPage extends StatefulWidget {
 
 class _TrackPageState extends State<TrackPage> {
   String selectedCategory = "Trending";
+  final types = HealthDataCardType.values;
 
   @override
   Widget build(BuildContext context) {
@@ -127,20 +128,21 @@ class _TrackPageState extends State<TrackPage> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children:
-                      categoryActions[selectedCategory]!
-                          .map(
-                            (action) => Padding(
-                              padding: EdgeInsets.only(
-                                left: screenHeight * 0.018,
-                              ),
-                              child: ActionCard(
-                                title: action.title,
-                                iconSrc: action.iconSrc,
-                                color: action.color,
-                              ),
-                            ),
-                          )
-                          .toList(),
+                      categoryActions[selectedCategory]!.asMap().entries.map((
+                        entry,
+                      ) {
+                        final index = entry.key;
+                        final action = entry.value;
+                        final rotatedType = types[index % types.length];
+
+                        return Padding(
+                          padding: EdgeInsets.only(left: screenHeight * 0.018),
+                          child: ActionCard(
+                            title: action.title,
+                            type: rotatedType,
+                          ),
+                        );
+                      }).toList(),
                 ),
               ),
 

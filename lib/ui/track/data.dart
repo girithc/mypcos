@@ -19,12 +19,17 @@ class Action {
 // Trending category gradient: light blue -> indigo
 final List<Action> Actions = [
   Action(
-    title: "Trendy 1",
+    title: "Steps",
     color: Colors.lightBlue.shade200,
     icon: Icon(Icons.apple, color: Colors.white),
   ),
   Action(
-    title: "Trendy 2",
+    title: "Calories",
+    color: Colors.indigo.shade400,
+    icon: Icon(Icons.flutter_dash, color: Colors.white),
+  ),
+  Action(
+    title: "Execise",
     color: Colors.indigo.shade400,
     icon: Icon(Icons.flutter_dash, color: Colors.white),
   ),
@@ -46,12 +51,12 @@ final List<Action> recentActions = [
 // Workout category: green gradients
 final List<Action> workoutActions = [
   Action(
-    title: "Yoga",
+    title: "Steps",
     color: Colors.green.shade300,
     icon: Icon(Icons.self_improvement, color: Colors.white),
   ),
   Action(
-    title: "HIIT",
+    title: "Calories",
     color: Colors.green.shade600,
     icon: Icon(Icons.fitness_center, color: Colors.white),
   ),
@@ -59,7 +64,7 @@ final List<Action> workoutActions = [
 
 final List<Action> workoutSecondary = [
   Action(
-    title: "Period Calendar",
+    title: "Exercise",
     color: Colors.white,
     icon: Icon(Icons.calendar_today, color: Colors.green),
   ),
