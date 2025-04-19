@@ -118,7 +118,23 @@ class _AuthGateState extends State<AuthGate> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: Center(child: CircularProgressIndicator()));
+    return Scaffold(
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            "Getting Ready ",
+            style: GoogleFonts.sriracha(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: const Color.fromARGB(255, 106, 0, 255),
+            ),
+          ),
+          SizedBox(height: 24),
+          Center(child: CircularProgressIndicator(color: Colors.deepPurple)),
+        ],
+      ),
+    );
   }
 }
 
@@ -390,10 +406,33 @@ class MyHomePageState extends State<MyHomePage> {
         showElevation: false,
         onItemSelected: (index) {
           if (index == 2) {
-            // 'Roo' tab pressed: navigate outside current tabs
-            Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => ChatPage()));
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (context) {
+                return DraggableScrollableSheet(
+                  expand: false,
+                  initialChildSize: 0.85,
+                  minChildSize: 0.6,
+                  maxChildSize: 0.95,
+                  builder: (context, scrollController) {
+                    return Container(
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(20),
+                        ), // 👈 Rounded top
+                      ),
+                      clipBehavior:
+                          Clip.antiAlias, // 👈 Ensures content respects radius
+                      child:
+                          ChatPage(), // ⬅️ Replace with the actual chat widget if needed
+                    );
+                  },
+                );
+              },
+            );
           } else {
             setState(() {
               selectedIndex = index; // switch tabs normally

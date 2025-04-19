@@ -9,11 +9,13 @@ class SecondaryActionCard extends StatelessWidget {
     this.iconsSrc = "assets/img/google.png",
     this.colorl = const Color(0xFF7553F6),
     this.trailingIcon,
+    this.onTapCallback, // 👈 add this
   });
 
   final String title, iconsSrc;
   final Color colorl;
   final Widget? trailingIcon; // New optional icon widget
+  final VoidCallback? onTapCallback; // 👈 declare callback
 
   @override
   Widget build(BuildContext context) {
@@ -23,54 +25,11 @@ class SecondaryActionCard extends StatelessWidget {
     return GestureDetector(
       onTap: () async {
         if (title == "Period Calendar") {
-          await showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            builder: (BuildContext context) {
-              return DraggableScrollableSheet(
-                initialChildSize: 0.85,
-                minChildSize: 0.5,
-                maxChildSize: 0.9,
-                expand: false,
-                builder: (
-                  BuildContext context,
-                  ScrollController scrollController,
-                ) {
-                  return PeriodCalendarSheetContent(
-                    scrollController: scrollController,
-                  );
-                },
-              );
-            },
-          );
+          if (onTapCallback != null) {
+            onTapCallback!(); // 👈 trigger callback to switch view
+          }
         } else if (title == "How Do You Feel ?") {
-          await showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            builder: (BuildContext context) {
-              return DraggableScrollableSheet(
-                initialChildSize: 0.65,
-                minChildSize: 0.5,
-                maxChildSize: 0.8,
-                expand: false,
-                builder: (
-                  BuildContext context,
-                  ScrollController scrollController,
-                ) {
-                  return MoodTrackerSheetContent(
-                    scrollController: scrollController,
-                  );
-                },
-              );
-            },
-          );
+          showMoodTrackerBottomSheet(context);
         } else if (title == "Dietary Preferences") {
           showDietaryPreferencesBottomSheet(context);
         } else if (title == "Upload Medical Report") {

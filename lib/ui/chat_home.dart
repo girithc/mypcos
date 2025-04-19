@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:roo_mobile/ui/bottom_sheet.dart';
 import 'package:roo_mobile/ui/chat.dart';
 
 class ChatHomePage extends StatefulWidget {
@@ -81,17 +82,6 @@ class _ChatHomePageState extends State<ChatHomePage> {
                   onTap: () {
                     // Show the dialog containing the chatPage
                     showChatBottomSheet(context);
-                    // ✅ Switch to ChatHomePage within the same tab
-                    /*
-                    (context.findAncestorStateOfType<MyHomePageState>())
-                        ?.setState(() {
-                          (context.findAncestorStateOfType<MyHomePageState>())
-                              ?.showChatHome = false;
-                          (context.findAncestorStateOfType<MyHomePageState>())
-                              ?.selectedIndex = 2;
-                        });
-
-                        */
                   },
                   child: Container(
                     decoration: BoxDecoration(

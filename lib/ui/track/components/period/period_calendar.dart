@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:roo_mobile/main.dart';
 import 'package:roo_mobile/ui/track/components/period/period_symptoms.dart';
 import 'package:roo_mobile/utils/constants.dart';
 import 'package:simple_animated_button/elevated_layer_button.dart';
@@ -19,9 +20,8 @@ class PeriodLog {
 }
 
 class PeriodCalendarSheetContent extends StatefulWidget {
-  final ScrollController scrollController;
-
-  const PeriodCalendarSheetContent({Key? key, required this.scrollController})
+  final VoidCallback? onBackToHome;
+  const PeriodCalendarSheetContent({Key? key, this.onBackToHome})
     : super(key: key);
 
   @override
@@ -35,7 +35,6 @@ class _PeriodCalendarSheetContentState
   DateTime _focusedDay = DateTime.now();
   final DateTime _firstDay = DateTime.now().subtract(Duration(days: 3650));
   final DateTime _lastDay = DateTime.now().add(Duration(days: 365));
-  DateTime? _selectedDay;
   bool _isLoading = true; // 1) loading flag
 
   // 1. Add state variable
@@ -226,7 +225,6 @@ class _PeriodCalendarSheetContentState
         (date) =>
             date.year == _focusedDay.year && date.month == _focusedDay.month,
       );
-      _selectedDay = null;
     });
   }
 
@@ -239,7 +237,6 @@ class _PeriodCalendarSheetContentState
   Future<void> _onDaySelected(DateTime selectedDay, DateTime focusedDay) async {
     setState(() {
       _focusedDay = focusedDay;
-      _selectedDay = selectedDay;
       bool isAlreadySelected = _periodDates.any(
         (d) => _isSameDay(d, selectedDay),
       );
@@ -271,220 +268,210 @@ class _PeriodCalendarSheetContentState
         child: CircularProgressIndicator(color: Colors.deepPurpleAccent),
       );
     } else {
-      return Theme(
-        data: Theme.of(context).copyWith(
-          textTheme: GoogleFonts.srirachaTextTheme(
-            Theme.of(context).textTheme,
-          ).apply(fontSizeFactor: 1.25),
+      return Scaffold(
+        backgroundColor: Colors.grey.shade100,
+        appBar: AppBar(
+          title: Text(
+            'Period Calendar',
+            style: largeText(
+              fontWeight: FontWeight.bold,
+              color: Colors.pinkAccent,
+            ),
+          ),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back_ios_outlined),
+            onPressed: () {
+              widget.onBackToHome?.call();
+            },
+          ),
+          backgroundColor: Colors.white,
+          elevation: 0,
+          iconTheme: IconThemeData(color: Colors.pinkAccent),
         ),
-        child: Container(
-          color: Colors.grey.shade200,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              Container(
+        body: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Expanded(
+              child: ListView(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
-                  vertical: 20,
+                  vertical: 24,
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Periods :))',
-                      style: largeText(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.pinkAccent,
+                children: [
+                  if (!_showingSymptomsInput) ...[
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          TableCalendar(
+                            firstDay: _firstDay,
+                            lastDay: _lastDay,
+                            focusedDay: _focusedDay,
+                            selectedDayPredicate:
+                                (day) =>
+                                    _periodDates.any((d) => _isSameDay(d, day)),
+                            onDaySelected: _onDaySelected,
+                            onPageChanged: (day) {
+                              setState(() {
+                                _focusedDay = day;
+                              });
+                            },
+                            calendarStyle: CalendarStyle(
+                              isTodayHighlighted: true,
+                              selectedDecoration: BoxDecoration(
+                                color: Colors.pinkAccent,
+                                shape: BoxShape.circle,
+                              ),
+                              todayDecoration: BoxDecoration(
+                                color: Colors.pink.withOpacity(0.3),
+                                shape: BoxShape.circle,
+                              ),
+                              weekendTextStyle: TextStyle(
+                                color: Colors.redAccent,
+                              ),
+                              outsideDaysVisible: false,
+                            ),
+                            headerStyle: HeaderStyle(
+                              formatButtonVisible: false,
+                              titleCentered: true,
+                              titleTextStyle: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                              leftChevronIcon: Icon(
+                                Icons.chevron_left,
+                                size: 28,
+                                color: Colors.black,
+                              ),
+                              rightChevronIcon: Icon(
+                                Icons.chevron_right,
+                                size: 28,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: ElevatedButton.icon(
+                              onPressed: _resetCurrentMonth,
+                              icon: Icon(Icons.refresh, size: 22),
+                              label: Text(
+                                "Reset This Month",
+                                style: TextStyle(fontSize: 18),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                foregroundColor: Colors.white,
+                                backgroundColor: const Color.fromARGB(
+                                  255,
+                                  255,
+                                  120,
+                                  165,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 10,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                elevation: 2,
+                              ),
+                            ),
+                          ),
+                          // Add the Cancel and Save buttons here (inside the white container)
+                          const SizedBox(height: 20),
+                        ],
                       ),
                     ),
-                    IconButton(
-                      icon: Icon(Icons.close, color: Colors.black),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: ListView(
-                  controller: widget.scrollController,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
-                  children: [
-                    if (!_showingSymptomsInput) ...[
+                    const SizedBox(height: 10),
+                    if (_hasDatesThisMonth()) ...[
                       Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 16,
                         ),
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            TableCalendar(
-                              firstDay: _firstDay,
-                              lastDay: _lastDay,
-                              focusedDay: _focusedDay,
-                              selectedDayPredicate:
-                                  (day) => _periodDates.any(
-                                    (d) => _isSameDay(d, day),
+                            // Cancel button
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                ),
+                                child: ElevatedButton(
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: Colors.black,
+                                    padding: EdgeInsets.symmetric(vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    elevation: 0,
                                   ),
-                              onDaySelected: _onDaySelected,
-                              onPageChanged: (day) {
-                                setState(() {
-                                  _focusedDay = day;
-                                });
-                              },
-                              calendarStyle: CalendarStyle(
-                                isTodayHighlighted: true,
-                                selectedDecoration: BoxDecoration(
-                                  color: Colors.pinkAccent,
-                                  shape: BoxShape.circle,
-                                ),
-                                todayDecoration: BoxDecoration(
-                                  color: Colors.pink.withOpacity(0.3),
-                                  shape: BoxShape.circle,
-                                ),
-                                weekendTextStyle: TextStyle(
-                                  color: Colors.redAccent,
-                                ),
-                                outsideDaysVisible: false,
-                              ),
-                              headerStyle: HeaderStyle(
-                                formatButtonVisible: false,
-                                titleCentered: true,
-                                titleTextStyle: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black,
-                                ),
-                                leftChevronIcon: Icon(
-                                  Icons.chevron_left,
-                                  size: 28,
-                                  color: Colors.black,
-                                ),
-                                rightChevronIcon: Icon(
-                                  Icons.chevron_right,
-                                  size: 28,
-                                  color: Colors.black,
+                                  child: Text(
+                                    'Cancel',
+                                    style: mediumText(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 12),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: ElevatedButton.icon(
-                                onPressed: _resetCurrentMonth,
-                                icon: Icon(Icons.refresh, size: 22),
-                                label: Text(
-                                  "Reset This Month",
-                                  style: TextStyle(fontSize: 18),
+                            // Save button
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
                                 ),
-                                style: ElevatedButton.styleFrom(
-                                  foregroundColor: Colors.white,
-                                  backgroundColor: const Color.fromARGB(
-                                    255,
-                                    255,
-                                    120,
-                                    165,
+                                child: ElevatedButton(
+                                  // Add your save logic here
+                                  //Navigator.of(context).pop();
+                                  onPressed: () async {
+                                    await _sendFullMonthPeriodData();
+                                  },
+
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.pinkAccent,
+                                    foregroundColor: Colors.white,
+                                    padding: EdgeInsets.symmetric(vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    elevation: 0,
                                   ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                    vertical: 10,
+                                  child: Text(
+                                    'Save',
+                                    style: mediumText(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
                                   ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  elevation: 2,
                                 ),
                               ),
                             ),
-                            // Add the Cancel and Save buttons here (inside the white container)
-                            const SizedBox(height: 20),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      if (_hasDatesThisMonth()) ...[
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 16,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              // Cancel button
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                  ),
-                                  child: ElevatedButton(
-                                    onPressed:
-                                        () => Navigator.of(context).pop(),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.white,
-                                      foregroundColor: Colors.black,
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: 12,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      'Cancel',
-                                      style: TextStyle(fontSize: 18),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              // Save button
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                  ),
-                                  child: ElevatedButton(
-                                    // Add your save logic here
-                                    //Navigator.of(context).pop();
-                                    onPressed: () async {
-                                      await _sendFullMonthPeriodData();
-                                    },
-
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.pinkAccent,
-                                      foregroundColor: Colors.white,
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: 12,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      'Save',
-                                      style: TextStyle(fontSize: 18),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ] else ...[
-                      PeriodSymptomsPage(
-                        periodId: _selectedPeriodId,
-                        onDone: () => _toggleSymptomsInput(false),
-                      ),
                     ],
+                  ] else ...[
+                    PeriodSymptomsPage(
+                      periodId: _selectedPeriodId,
+                      onDone: () => _toggleSymptomsInput(false),
+                    ),
                   ],
-                ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
     }

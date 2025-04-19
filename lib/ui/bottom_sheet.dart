@@ -4,6 +4,7 @@ import 'package:calendar_timeline/calendar_timeline.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:roo_mobile/ui/chat.dart';
 import 'package:roo_mobile/ui/track/components/period/period_calendar.dart';
 import 'package:roo_mobile/ui/settings.dart';
 
@@ -514,19 +515,19 @@ void showPeriodCalendarBottomSheet(BuildContext context) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.transparent, // To allow the gradient to show
+    backgroundColor: Colors.grey.shade200, // To allow the gradient to show
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
     builder: (BuildContext context) {
       return DraggableScrollableSheet(
         initialChildSize:
-            0.5, // Increased from 0.75 so more content appears immediately
+            0.8, // Increased from 0.75 so more content appears immediately
         minChildSize: 0.4,
         maxChildSize: 0.9,
         expand: false,
         builder: (BuildContext context, ScrollController scrollController) {
-          return PeriodCalendarSheetContent(scrollController: scrollController);
+          return PeriodCalendarSheetContent();
         },
       );
     },
@@ -538,20 +539,23 @@ void showMoodTrackerBottomSheet(BuildContext context) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.transparent, // To allow the gradient to show
+    backgroundColor: Colors.transparent,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
     builder: (BuildContext context) {
-      return DraggableScrollableSheet(
-        initialChildSize:
-            0.65, // Increased from 0.75 so more content appears immediately
-        minChildSize: 0.5,
-        maxChildSize: 0.8,
-        expand: false,
-        builder: (BuildContext context, ScrollController scrollController) {
-          return MoodTrackerSheetContent(scrollController: scrollController);
-        },
+      return SizedBox(
+        height:
+            MediaQuery.of(context).size.height * 0.95, // allow enough height
+        child: DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          minChildSize: 0.7,
+          maxChildSize: 0.9,
+          expand: true,
+          builder: (BuildContext context, ScrollController scrollController) {
+            return MoodTrackerSheetContent(scrollController: scrollController);
+          },
+        ),
       );
     },
   );
@@ -703,4 +707,64 @@ class _MoodTrackerSheetContentState extends State<MoodTrackerSheetContent> {
       ),
     );
   }
+}
+
+void showChatBottomSheet(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(20),
+      ), // Curved top borders
+    ),
+    builder: (BuildContext context) {
+      return Container(
+        height:
+            MediaQuery.of(context).size.height * 0.7, // 70% of screen height
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          color: Colors.white, // Background color of the bottom sheet
+        ),
+        child: Column(
+          children: [
+            // Header with "Roo" and close button
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'ROO',
+                    style: GoogleFonts.sriracha(
+                      // ✅ Use Rock Salt from Google Fonts
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: const Color.fromARGB(255, 106, 0, 255),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.close,
+                      color: const Color.fromARGB(255, 106, 0, 255),
+                    ),
+                    onPressed:
+                        () => Navigator.of(context).pop(), // Close action
+                  ),
+                ],
+              ),
+            ),
+
+            // ChatPage with curved borders
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: ChatPage(), // Your chatPage widget
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
 }

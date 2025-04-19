@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:roo_mobile/ui/bottom_sheet.dart';
 import 'package:roo_mobile/ui/chat.dart';
 import 'package:roo_mobile/ui/detail.dart';
 

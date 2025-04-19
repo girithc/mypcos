@@ -27,6 +27,7 @@ class _ChatPageState extends State<ChatPage> {
   List<types.Message> _messages = [];
   final _user = const types.User(id: '82091008-a484-4a89-ae75-a22bf8d6f3ac');
   final _auth = FirebaseAuth.instance;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -197,10 +198,10 @@ class _ChatPageState extends State<ChatPage> {
 
     try {
       final body = jsonEncode({
-        'q': message.text,
+        'message': message.text,
         'firebase_token': await _auth.currentUser?.getIdToken(),
       });
-      final uri = Uri.parse('${EnvConfig.baseUrl}/ask');
+      final uri = Uri.parse('${EnvConfig.baseUrl}/chat-send-message');
 
       final response = await http.post(
         uri,
@@ -208,12 +209,12 @@ class _ChatPageState extends State<ChatPage> {
         body: body,
       );
 
-      //print(response.statusCode);
-      //print(response.body);
+      print(response.statusCode);
+      print(response.body);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final answer = data['answer'] ?? 'No answer found.';
+        final answer = data['reply'] ?? 'No answer found.';
 
         final botMessage = types.TextMessage(
           author: const types.User(id: 'bot'),
@@ -246,139 +247,125 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   void _loadMessages() async {
-    final response = await rootBundle.loadString('assets/data/messages.json');
-    final messages =
-        (jsonDecode(response) as List)
-            .map((e) => types.Message.fromJson(e as Map<String, dynamic>))
-            .toList();
+    setState(() => _isLoading = true); // Show loader
 
-    setState(() {
-      _messages = messages;
-    });
+    try {
+      final firebaseToken = await _auth.currentUser?.getIdToken();
+
+      final response = await http.post(
+        Uri.parse('${EnvConfig.baseUrl}/chat-get-message'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'firebase_token': firebaseToken}),
+      );
+      print("Response: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        final List<types.Message> loadedMessages =
+            (data['messages'] as List).map((msg) {
+              final isUser = msg['sender'] == 'user';
+
+              return types.TextMessage(
+                id: msg['id'].toString(),
+                author: isUser ? _user : const types.User(id: 'bot'),
+                createdAt:
+                    DateTime.parse(msg['created_at']).millisecondsSinceEpoch,
+                text: msg['message'],
+              );
+            }).toList();
+
+        setState(() {
+          _messages = loadedMessages.reversed.toList();
+        });
+      }
+    } catch (e) {
+      print('Error loading messages: $e');
+    } finally {
+      setState(() => _isLoading = false); // Hide loader
+    }
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      backgroundColor: Colors.white,
-      elevation: 0,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
-        onPressed: () => Navigator.of(context).pop(),
-      ),
-      // optionally center your title, or leave title blank
-      title: const SizedBox.shrink(),
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 16.0),
-          child: Center(
-            child: Text('Roo', style: largeText(color: Colors.deepPurple)),
-          ),
-        ),
-      ],
-    ),
-    body: Chat(
-      messages: _messages,
-      onAttachmentPressed: _handleAttachmentPressed,
-      onMessageTap: _handleMessageTap,
-      onPreviewDataFetched: _handlePreviewDataFetched,
-      onSendPressed: _handleSendPressed,
-      showUserAvatars: true,
-      showUserNames: true,
-      user: _user,
-    ),
-
-    /*
-    floatingActionButton: SizedBox(
-      height: MediaQuery.of(context).size.height * 0.045,
-      child: FloatingActionButton.extended(
-        onPressed: () {
-          // ✅ Switch to ChatHomePage within the same tab
-          (context.findAncestorStateOfType<MyHomePageState>())?.setState(() {
-            (context.findAncestorStateOfType<MyHomePageState>())?.showChatHome =
-                true;
-            (context.findAncestorStateOfType<MyHomePageState>())
-                ?.selectedIndex = 2;
-          });
-        },
-        label: Row(
-          children: [
-            Text(
-              'PCOS GPT  ',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        if (_isLoading)
+          const Center(
+            child: CircularProgressIndicator(color: Colors.deepPurpleAccent),
+          )
+        else
+          Chat(
+            messages: _messages,
+            onAttachmentPressed: _handleAttachmentPressed,
+            onMessageTap: _handleMessageTap,
+            onPreviewDataFetched: _handlePreviewDataFetched,
+            onSendPressed: _handleSendPressed,
+            showUserAvatars: true,
+            showUserNames: true,
+            user: _user,
+            emptyState: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '👋 Welcome to MyPCOS AI',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.sriracha(
+                        fontSize: 20,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Ask questions about PCOS',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey[500],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            Icon(Icons.expand_more_rounded, color: Colors.deepPurpleAccent),
-          ],
-        ),
-        backgroundColor: Colors.black,
-      ),
-    ),
+          ),
 
-    floatingActionButtonLocation: FloatingActionButtonLocation.centerTop,
-    */
-  );
-}
-
-void showChatBottomSheet(BuildContext context) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(
-        top: Radius.circular(20),
-      ), // Curved top borders
-    ),
-    builder: (BuildContext context) {
-      return Container(
-        height:
-            MediaQuery.of(context).size.height * 0.7, // 70% of screen height
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          color: Colors.white, // Background color of the bottom sheet
-        ),
-        child: Column(
-          children: [
-            // Header with "Roo" and close button
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        // Floating Cancel AppBar
+        Positioned(
+          top: MediaQuery.of(context).padding.top + 12,
+          left: 0,
+          right: 16,
+          child: Material(
+            borderRadius: BorderRadius.circular(20),
+            color: Colors.white,
+            child: Container(
+              height: 48,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              alignment: Alignment.centerLeft,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'ROO',
-                    style: GoogleFonts.sriracha(
-                      // ✅ Use Rock Salt from Google Fonts
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: const Color.fromARGB(255, 106, 0, 255),
-                    ),
-                  ),
                   IconButton(
-                    icon: Icon(
-                      Icons.close,
-                      color: const Color.fromARGB(255, 106, 0, 255),
+                    icon: Icon(Icons.close),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                  Text(
+                    'MyPCOS AI',
+                    style: mediumText(
+                      color: Colors.deepPurpleAccent,
+                      fontWeight: FontWeight.bold,
                     ),
-                    onPressed:
-                        () => Navigator.of(context).pop(), // Close action
                   ),
                 ],
               ),
             ),
-
-            // ChatPage with curved borders
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: ChatPage(), // Your chatPage widget
-              ),
-            ),
-          ],
+          ),
         ),
-      );
-    },
-  );
+      ],
+    );
+  }
 }

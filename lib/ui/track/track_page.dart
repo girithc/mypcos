@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:roo_mobile/ui/bottom_sheet.dart';
 import 'package:roo_mobile/ui/chat.dart';
 import 'package:roo_mobile/ui/track/action_card.dart';
+import 'package:roo_mobile/ui/track/components/period/period_calendar.dart';
 import 'package:roo_mobile/ui/track/secondary_action_card.dart';
 import 'package:roo_mobile/ui/track/data.dart';
 
@@ -18,55 +19,61 @@ class _TrackPageState extends State<TrackPage> {
 
   @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey[200],
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: _buildCurrentView(context),
+      ),
+    );
+  }
+
+  Widget _buildCurrentView(BuildContext context) {
+    switch (selectedCategory) {
+      case "Period":
+        return periodView();
+      default:
+        return homeView(context);
+    }
+  }
+
+  Widget homeView(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
     final screenHeight = mediaQuery.size.height;
 
     return Scaffold(
-      backgroundColor: Colors.grey[200],
-      body: SafeArea(
-        bottom: false,
-        child: SingleChildScrollView(
+      appBar: AppBar(
+        backgroundColor: Colors.white, // match Scaffold background if needed
+        elevation: 0,
+        automaticallyImplyLeading: false, // disables default back button
+        title: Text(
+          selectedCategory,
+          style: GoogleFonts.sriracha(
+            fontSize: 32, // Slightly smaller for AppBar
+            fontWeight: FontWeight.w800,
+            color: Colors.black,
+          ),
+        ),
+        actions: [
+          _circleIcon(context, Icons.calendar_month, showCalendarBottomSheet),
+          _circleIcon(
+            context,
+            null,
+            showSettingsBottomSheet,
+            imageAsset: 'assets/img/profile_pic.png',
+          ),
+          _circleIcon(context, Icons.auto_awesome, showChatBottomSheet),
+          const SizedBox(width: 12), // spacing at end
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Container(
+          color: Colors.grey.shade200,
+          padding: EdgeInsets.only(top: screenHeight * 0.025),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header
-              Padding(
-                padding: EdgeInsets.all(screenHeight * 0.03),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      selectedCategory,
-                      style: GoogleFonts.sriracha(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.black,
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        _circleIcon(
-                          context,
-                          Icons.calendar_month,
-                          showCalendarBottomSheet,
-                        ),
-                        _circleIcon(
-                          context,
-                          null,
-                          showSettingsBottomSheet,
-                          imageAsset: 'assets/img/profile_pic.png',
-                        ),
-                        _circleIcon(
-                          context,
-                          Icons.auto_awesome,
-                          showChatBottomSheet,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
               // Category Selector
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: screenHeight * 0.03),
@@ -161,6 +168,10 @@ class _TrackPageState extends State<TrackPage> {
                     iconsSrc: action.iconSrc,
                     colorl: action.color,
                     trailingIcon: action.icon,
+                    onTapCallback:
+                        action.title == "Period Calendar"
+                            ? () => setState(() => selectedCategory = "Period")
+                            : null,
                   ),
                 ),
               ),
@@ -170,6 +181,14 @@ class _TrackPageState extends State<TrackPage> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget periodView() {
+    return PeriodCalendarSheetContent(
+      onBackToHome:
+          () =>
+              setState(() => selectedCategory = "Trending"), // 👈 switches back
     );
   }
 

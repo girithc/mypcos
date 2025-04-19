@@ -140,7 +140,7 @@ class _PeriodSymptomsPageState extends State<PeriodSymptomsPage> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: const BorderRadius.all(Radius.circular(20)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,7 +165,7 @@ class _PeriodSymptomsPageState extends State<PeriodSymptomsPage> {
           const SizedBox(height: 32),
           Text(
             'How Did You Feel ?',
-            style: largeText(fontWeight: FontWeight.bold),
+            style: mediumText(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Wrap(
@@ -191,7 +191,7 @@ class _PeriodSymptomsPageState extends State<PeriodSymptomsPage> {
           const SizedBox(height: 32),
           Text(
             'Anything Else ?',
-            style: largeText(fontWeight: FontWeight.bold),
+            style: mediumText(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           TextField(
@@ -209,8 +209,8 @@ class _PeriodSymptomsPageState extends State<PeriodSymptomsPage> {
           Center(
             child: ElevatedLayerButton(
               onClick: _updateSymptoms,
-              buttonHeight: 60,
-              buttonWidth: 270,
+              buttonHeight: 55,
+              buttonWidth: 180,
               animationDuration: const Duration(milliseconds: 200),
               animationCurve: Curves.ease,
               topDecoration: BoxDecoration(
@@ -219,7 +219,7 @@ class _PeriodSymptomsPageState extends State<PeriodSymptomsPage> {
               ),
               topLayerChild: Text(
                 "Done",
-                style: largeText(color: Colors.white),
+                style: mediumText(color: Colors.white),
               ),
               baseDecoration: BoxDecoration(
                 color: Colors.deepPurple,
