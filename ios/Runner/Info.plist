@@ -30,6 +30,10 @@
 	<true/>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>We need access to your photo library so you can upload images as part of your experience in the app.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>This app needs access to your health data to show steps and calories burned.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>This app writes exercise data to your HealthKit store.</string>
 
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
