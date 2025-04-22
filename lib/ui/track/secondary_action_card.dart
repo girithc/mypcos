@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:roo_mobile/ui/bottom_sheet.dart';
+import 'package:roo_mobile/ui/components/bottom_sheet.dart';
 import 'package:roo_mobile/ui/track/components/period/period_calendar.dart';
 
 class SecondaryActionCard extends StatelessWidget {
@@ -33,7 +33,9 @@ class SecondaryActionCard extends StatelessWidget {
         } else if (title == "Dietary Preferences") {
           showDietaryPreferencesBottomSheet(context);
         } else if (title == "Upload Medical Report") {
-          showMedicalReportUploadSheet(context);
+          if (onTapCallback != null) {
+            onTapCallback!(); // 👈 trigger callback to switch view
+          }
         }
       },
       child: Container(

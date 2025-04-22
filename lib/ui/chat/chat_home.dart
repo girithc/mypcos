@@ -3,8 +3,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:roo_mobile/ui/bottom_sheet.dart';
-import 'package:roo_mobile/ui/chat.dart';
+import 'package:roo_mobile/ui/components/bottom_sheet.dart';
+import 'package:roo_mobile/ui/components/chat.dart';
 
 class ChatHomePage extends StatefulWidget {
   const ChatHomePage({super.key});

@@ -63,6 +63,7 @@ dependencies:
   table_calendar: ^3.1.3
   simple_animated_button: ^0.0.9
   health: ^12.1.0
+  device_info_plus: ^11.3.3
 
 dev_dependencies:
   flutter_test:
@@ -87,7 +88,7 @@ flutter:
     - assets/data/messages.json
     - assets/img/profile_pic.png
     - assets/img/women-arms.jpg
-    - assets/img/google.png
+    - assets/file/blood_report.pdf
 
 
   # The following line ensures that the Material Icons font is

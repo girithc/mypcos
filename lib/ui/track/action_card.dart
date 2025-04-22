@@ -1,20 +1,25 @@
+import 'dart:io' show Platform;
+
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:health/health.dart';
 
 enum HealthDataCardType { steps, calories, exerciseMinutes }
 
 class ActionCard extends StatefulWidget {
+  final String title, iconSrc;
+  final Color color;
+  final HealthDataCardType? type; // nullable
+  final VoidCallback? onTapOverride; // for non-health actions
+
   const ActionCard({
     super.key,
     required this.title,
-    required this.type,
-    this.color = const Color(0xFF7553F6),
     this.iconSrc = "assets/img/profile_pic.png",
+    this.color = const Color(0xFF7553F6),
+    this.type,
+    this.onTapOverride,
   });
-
-  final String title, iconSrc;
-  final Color color;
-  final HealthDataCardType type;
 
   @override
   State<ActionCard> createState() => _ActionCardState();
@@ -27,16 +32,25 @@ class _ActionCardState extends State<ActionCard> {
   double? _exerciseMinutes;
 
   Future<void> _fetchHealthData() async {
+    // Avoid crashing in iOS Simulator
+    if (Platform.isIOS) {
+      final deviceInfo = await DeviceInfoPlugin().iosInfo;
+      if (!deviceInfo.isPhysicalDevice) {
+        debugPrint("Skipping HealthKit: running in iOS Simulator");
+        return;
+      }
+    }
+
     final types = [
       HealthDataType.STEPS,
-      HealthDataType.ACTIVE_ENERGY_BURNED,
       HealthDataType.EXERCISE_TIME,
+      HealthDataType.BASAL_ENERGY_BURNED,
     ];
 
     final permissions = [
-      HealthDataAccess.READ,
-      HealthDataAccess.READ,
-      HealthDataAccess.READ,
+      HealthDataAccess.READ_WRITE,
+      HealthDataAccess.READ_WRITE,
+      HealthDataAccess.READ_WRITE,
     ];
 
     final now = DateTime.now();
@@ -54,11 +68,11 @@ class _ActionCardState extends State<ActionCard> {
           startTime: midnight,
           endTime: now,
         );
-        final steps = _sumQuantity(data, HealthDataType.STEPS).round();
-        final calories = _sumQuantity(
-          data,
-          HealthDataType.ACTIVE_ENERGY_BURNED,
-        );
+        debugPrint("Fetched data: $data");
+
+        final steps =
+            _sumQuantity(data, HealthDataType.ACTIVE_ENERGY_BURNED).round();
+        final calories = _sumQuantity(data, HealthDataType.WORKOUT);
         final exercise = _sumQuantity(data, HealthDataType.EXERCISE_TIME);
 
         setState(() {
@@ -75,9 +89,16 @@ class _ActionCardState extends State<ActionCard> {
   }
 
   double _sumQuantity(List<HealthDataPoint> data, HealthDataType type) {
-    return data
-        .where((d) => d.type == type)
-        .fold(0.0, (sum, d) => sum + (d.value as num).toDouble());
+    return data.where((d) => d.type == type).fold(0.0, (sum, d) {
+      //print("Data point: $d, Data type: ${d.type} == $type");
+      final value = d.value;
+      if (value is NumericHealthValue) {
+        return sum + value.numericValue;
+      } else {
+        debugPrint("Unsupported HealthValue type: ${value.runtimeType}");
+        return sum;
+      }
+    });
   }
 
   double _getProgressValue() {
@@ -94,6 +115,9 @@ class _ActionCardState extends State<ActionCard> {
         return (_exerciseMinutes != null
             ? (_exerciseMinutes! / 30).clamp(0.0, 1.0)
             : 0.0); // 30 min goal
+      case null:
+        // TODO: Handle this case.
+        throw UnimplementedError();
     }
   }
 
@@ -105,7 +129,16 @@ class _ActionCardState extends State<ActionCard> {
         return '${_calories?.toInt() ?? 0} cal';
       case HealthDataCardType.exerciseMinutes:
         return '${_exerciseMinutes?.toInt() ?? 0} min';
+      case null:
+        // TODO: Handle this case.
+        throw UnimplementedError();
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchHealthData();
   }
 
   @override
@@ -115,8 +148,22 @@ class _ActionCardState extends State<ActionCard> {
 
     return GestureDetector(
       onTap: () async {
-        await _fetchHealthData();
-        _showHealthDetails(context);
+        if (widget.type != null) {
+          await _fetchHealthData();
+          _showHealthDetails(context);
+        } else if (widget.onTapOverride != null) {
+          widget.onTapOverride!();
+        } else {
+          // fallback
+          showDialog(
+            context: context,
+            builder:
+                (_) => AlertDialog(
+                  title: Text(widget.title),
+                  content: const Text("Custom action coming soon!"),
+                ),
+          );
+        }
       },
       child: Container(
         padding: EdgeInsets.symmetric(
@@ -140,37 +187,39 @@ class _ActionCardState extends State<ActionCard> {
               ),
             ),
             const SizedBox(height: 10),
-            Expanded(
-              child: Center(
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    SizedBox(
-                      height: screenWidth * 0.2,
-                      width: screenWidth * 0.2,
-                      child: CircularProgressIndicator(
-                        value: _getProgressValue(),
-                        backgroundColor: Colors.deepPurpleAccent.withOpacity(
-                          0.2,
+            if (widget.type != null) ...[
+              Expanded(
+                child: Center(
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SizedBox(
+                        height: screenWidth * 0.2,
+                        width: screenWidth * 0.2,
+                        child: CircularProgressIndicator(
+                          value: _getProgressValue(),
+                          backgroundColor: Colors.deepPurpleAccent.withOpacity(
+                            0.2,
+                          ),
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            Colors.deepPurpleAccent,
+                          ),
+                          strokeWidth: 6.0,
                         ),
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                          Colors.deepPurpleAccent,
+                      ),
+                      Text(
+                        _getDisplayValue(),
+                        style: const TextStyle(
+                          color: Colors.deepPurpleAccent,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
                         ),
-                        strokeWidth: 6.0,
                       ),
-                    ),
-                    Text(
-                      _getDisplayValue(),
-                      style: const TextStyle(
-                        color: Colors.deepPurpleAccent,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
       ),

@@ -19,17 +19,17 @@ class Action {
 // Trending category gradient: light blue -> indigo
 final List<Action> Actions = [
   Action(
-    title: "Steps",
+    title: "Diet Plan",
     color: Colors.lightBlue.shade200,
     icon: Icon(Icons.apple, color: Colors.white),
   ),
   Action(
-    title: "Calories",
+    title: "Medicine Cabinet",
     color: Colors.indigo.shade400,
     icon: Icon(Icons.flutter_dash, color: Colors.white),
   ),
   Action(
-    title: "Execise",
+    title: "Daily Journal",
     color: Colors.indigo.shade400,
     icon: Icon(Icons.flutter_dash, color: Colors.white),
   ),

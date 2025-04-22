@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:roo_mobile/ui/bottom_sheet.dart';
-import 'package:roo_mobile/ui/chat.dart';
+import 'package:roo_mobile/ui/components/bottom_sheet.dart';
+import 'package:roo_mobile/ui/components/chat.dart';
 import 'package:roo_mobile/ui/track/action_card.dart';
 import 'package:roo_mobile/ui/track/components/period/period_calendar.dart';
 import 'package:roo_mobile/ui/track/secondary_action_card.dart';
@@ -33,6 +33,8 @@ class _TrackPageState extends State<TrackPage> {
     switch (selectedCategory) {
       case "Period":
         return periodView();
+      case "Medical":
+        return medicalReportView();
       default:
         return homeView(context);
     }
@@ -81,7 +83,7 @@ class _TrackPageState extends State<TrackPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children:
-                      ["Workout", "Diet", "Health"].map((category) {
+                      ["Health", "Diet", "Workout"].map((category) {
                         final isSelected = selectedCategory == category;
                         return GestureDetector(
                           onTap:
@@ -122,63 +124,12 @@ class _TrackPageState extends State<TrackPage> {
               ),
 
               SizedBox(height: screenHeight * 0.03),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                child: _buildTabCurrentView(context),
+              ),
 
               // Horizontal Primary Actions
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children:
-                      categoryActions[selectedCategory]!.asMap().entries.map((
-                        entry,
-                      ) {
-                        final index = entry.key;
-                        final action = entry.value;
-                        final rotatedType = types[index % types.length];
-
-                        return Padding(
-                          padding: EdgeInsets.only(left: screenHeight * 0.018),
-                          child: ActionCard(
-                            title: action.title,
-                            type: rotatedType,
-                          ),
-                        );
-                      }).toList(),
-                ),
-              ),
-
-              // Secondary Actions
-              Padding(
-                padding: EdgeInsets.all(screenHeight * 0.03),
-                child: Text(
-                  "Actions",
-                  style: GoogleFonts.sriracha(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.black,
-                  ),
-                ),
-              ),
-
-              ...secondaryCategoryActions[selectedCategory]!.map(
-                (action) => Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: screenHeight * 0.03,
-                    vertical: screenHeight * 0.015,
-                  ),
-                  child: SecondaryActionCard(
-                    title: action.title,
-                    iconsSrc: action.iconSrc,
-                    colorl: action.color,
-                    trailingIcon: action.icon,
-                    onTapCallback:
-                        action.title == "Period Calendar"
-                            ? () => setState(() => selectedCategory = "Period")
-                            : null,
-                  ),
-                ),
-              ),
-
-              SizedBox(height: screenHeight * 0.1),
             ],
           ),
         ),
@@ -186,8 +137,90 @@ class _TrackPageState extends State<TrackPage> {
     );
   }
 
+  Widget _buildTabCurrentView(BuildContext context) {
+    switch (selectedCategory) {
+      case "Health":
+        return defaultTabView(context);
+      case "Diet":
+        return defaultTabView(context);
+      case "Workout":
+        return defaultTabView(context);
+      default:
+        return defaultTabView(context);
+    }
+  }
+
+  Widget defaultTabView(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children:
+                categoryActions[selectedCategory]!.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final action = entry.value;
+                  final rotatedType = types[index % types.length];
+
+                  return Padding(
+                    padding: EdgeInsets.only(left: screenHeight * 0.018),
+                    child: ActionCard(title: action.title, type: rotatedType),
+                  );
+                }).toList(),
+          ),
+        ),
+
+        // Secondary Actions
+        Padding(
+          padding: EdgeInsets.all(screenHeight * 0.03),
+          child: Text(
+            "Actions",
+            style: GoogleFonts.sriracha(
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              color: Colors.black,
+            ),
+          ),
+        ),
+
+        ...secondaryCategoryActions[selectedCategory]!.map(
+          (action) => Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: screenHeight * 0.03,
+              vertical: screenHeight * 0.015,
+            ),
+            child: SecondaryActionCard(
+              title: action.title,
+              iconsSrc: action.iconSrc,
+              colorl: action.color,
+              trailingIcon: action.icon,
+              onTapCallback:
+                  action.title == "Period Calendar"
+                      ? () => setState(() => selectedCategory = "Period")
+                      : action.title == "Upload Medical Report"
+                      ? () => setState(() => selectedCategory = "Medical")
+                      : null,
+            ),
+          ),
+        ),
+
+        SizedBox(height: screenHeight * 0.1),
+      ],
+    );
+  }
+
   Widget periodView() {
     return PeriodCalendarSheetContent(
+      onBackToHome:
+          () =>
+              setState(() => selectedCategory = "Trending"), // 👈 switches back
+    );
+  }
+
+  Widget medicalReportView() {
+    return MedicalReportUploadContent(
       onBackToHome:
           () =>
               setState(() => selectedCategory = "Trending"), // 👈 switches back

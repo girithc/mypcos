@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:roo_mobile/ui/events.dart';
+import 'package:roo_mobile/ui/store/events.dart';
 
 class DetailsScreen extends StatelessWidget {
   const DetailsScreen({super.key, required this.product});

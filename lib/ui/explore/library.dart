@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:roo_mobile/ui/chat.dart';
-import 'package:roo_mobile/ui/library/detail.dart';
+import 'package:roo_mobile/ui/components/chat.dart';
+import 'package:roo_mobile/ui/explore/detail.dart';
 
 class LibraryPage extends StatelessWidget {
   const LibraryPage({super.key});

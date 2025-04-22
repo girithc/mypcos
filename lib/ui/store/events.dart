@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:roo_mobile/ui/bottom_sheet.dart';
-import 'package:roo_mobile/ui/chat.dart';
-import 'package:roo_mobile/ui/detail.dart';
+import 'package:roo_mobile/ui/components/bottom_sheet.dart';
+import 'package:roo_mobile/ui/components/chat.dart';
+import 'package:roo_mobile/ui/store/detail.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

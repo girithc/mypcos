@@ -1,12 +1,19 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
 import 'package:calendar_timeline/calendar_timeline.dart';
 import 'package:dotted_border/dotted_border.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:roo_mobile/ui/chat.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'package:roo_mobile/ui/components/chat.dart';
 import 'package:roo_mobile/ui/track/components/period/period_calendar.dart';
-import 'package:roo_mobile/ui/settings.dart';
+import 'package:roo_mobile/ui/components/settings.dart';
+import 'package:roo_mobile/utils/constants.dart';
 
 void showDietaryPreferencesBottomSheet(BuildContext context) {
   showModalBottomSheet(
@@ -275,7 +282,7 @@ void showMedicalReportUploadSheet(BuildContext context) {
         maxChildSize: 0.9, // Maximum height when fully expanded
         expand: false,
         builder: (context, scrollController) {
-          return MedicalReportUploadContent(scrollController: scrollController);
+          return MedicalReportUploadContent();
         },
       );
     },
@@ -283,108 +290,222 @@ void showMedicalReportUploadSheet(BuildContext context) {
 }
 
 class MedicalReportUploadContent extends StatefulWidget {
-  final ScrollController scrollController;
+  final VoidCallback? onBackToHome;
 
-  const MedicalReportUploadContent({Key? key, required this.scrollController})
+  const MedicalReportUploadContent({Key? key, this.onBackToHome})
     : super(key: key);
 
   @override
-  _MedicalReportUploadContentState createState() =>
-      _MedicalReportUploadContentState();
+  MedicalReportUploadContentState createState() =>
+      MedicalReportUploadContentState();
 }
 
-class _MedicalReportUploadContentState
+class MedicalReportUploadContentState
     extends State<MedicalReportUploadContent> {
   String? selectedFileName;
+  String? apiRawJson;
+  String? gptResponse;
 
   Future<void> _pickFile() async {
-    // Simulating file picker (Replace this with actual file picker logic)
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+
+    if (result != null && result.files.single.path != null) {
+      String filePath = result.files.single.path!;
+      File file = File(filePath);
+
+      setState(() {
+        selectedFileName = result.files.single.name;
+      });
+
+      await _uploadFile(file);
+    }
+  }
+
+  Future<File> _loadBundledPDF() async {
+    final byteData = await rootBundle.load('assets/file/blood_report.pdf');
+
+    final tempDir = await getTemporaryDirectory();
+    final file = File(
+      '${tempDir.path}/blood_report.pdf',
+    ); // ✅ DON'T include '/file/' in the temp path
+
+    await file.writeAsBytes(byteData.buffer.asUint8List());
+    return file;
+  }
+
+  Future<void> _uploadBundledPDF() async {
+    final file = await _loadBundledPDF();
     setState(() {
-      selectedFileName = "medical_report.pdf"; // Mock file selection
+      selectedFileName = 'medical_report.pdf';
     });
+    await _uploadFile(file);
+  }
+
+  Future<void> _uploadFile(File file) async {
+    String apiUrl = '${EnvConfig.baseUrl}/upload-report';
+
+    var request = http.MultipartRequest('POST', Uri.parse(apiUrl));
+    request.files.add(await http.MultipartFile.fromPath('file', file.path));
+
+    try {
+      var response = await request.send();
+      print("Response: ${response.statusCode}");
+      print("Response: ${response.stream}");
+      if (response.statusCode == 200) {
+        final res = await http.Response.fromStream(response);
+        final decoded = jsonDecode(res.body);
+
+        setState(() {
+          apiRawJson = const JsonEncoder.withIndent(
+            '  ',
+          ).convert(decoded['json_data']);
+          gptResponse = decoded['gpt_response'];
+        });
+
+        print('✅ JSON Data: $apiRawJson');
+        print('✅ GPT Response: $gptResponse');
+      } else {
+        setState(() {
+          apiRawJson = null;
+          gptResponse = 'Failed with status: ${response.statusCode}';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        apiRawJson = null;
+        gptResponse = 'Error uploading file: $e';
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      controller: widget.scrollController, // Make it scrollable
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        automaticallyImplyLeading: false, // disables default back button
+        title: Text(
+          'Upload Medical Report',
+          style: GoogleFonts.sriracha(
+            fontSize: 32,
+            fontWeight: FontWeight.w800,
+            color: Colors.black,
+          ),
         ),
+      ),
+      body: SingleChildScrollView(
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
 
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Medical Report',
-                  style: GoogleFonts.sriracha(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: const Color.fromARGB(255, 106, 0, 255),
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.close, color: Colors.deepPurple),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
-            SizedBox(height: MediaQuery.of(context).size.height * 0.05),
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              SizedBox(height: MediaQuery.of(context).size.height * 0.1),
 
-            // Upload Button
-            Center(
-              child: DottedBorder(
-                color: Colors.deepPurple, // Dotted border color
-                strokeWidth: 2, // Border thickness
-                dashPattern: [8, 4], // Dash pattern (8px dash, 4px gap)
-                borderType: BorderType.RRect, // Rounded rectangle border
-                radius: Radius.circular(8),
-                child: Container(
-                  width: MediaQuery.of(context).size.width * 0.9,
-                  padding: EdgeInsets.symmetric(horizontal: 5, vertical: 5),
-                  child: ElevatedButton.icon(
-                    onPressed: _pickFile,
-                    icon: Icon(
-                      Icons.upload_file,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                    label: Text(
-                      'Upload File',
-                      style: TextStyle(color: Colors.white, fontSize: 18),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color.fromARGB(255, 106, 0, 255),
-                      padding: EdgeInsets.symmetric(
-                        vertical: 16,
-                        horizontal: 36,
+              // Upload Button
+              Center(
+                child: DottedBorder(
+                  color: Colors.deepPurple, // Dotted border color
+                  strokeWidth: 2, // Border thickness
+                  dashPattern: [8, 4], // Dash pattern (8px dash, 4px gap)
+                  borderType: BorderType.RRect, // Rounded rectangle border
+                  radius: Radius.circular(8),
+                  child: Container(
+                    width: MediaQuery.of(context).size.width * 0.9,
+                    padding: EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+                    child: ElevatedButton.icon(
+                      onPressed: _uploadBundledPDF,
+                      icon: Icon(
+                        Icons.upload_file,
+                        color: Colors.white,
+                        size: 24,
                       ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                      label: Text(
+                        'Upload File',
+                        style: TextStyle(color: Colors.white, fontSize: 18),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color.fromARGB(255, 106, 0, 255),
+                        padding: EdgeInsets.symmetric(
+                          vertical: 16,
+                          horizontal: 36,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
 
-            SizedBox(height: 30),
+              SizedBox(height: 30),
 
-            // Show selected file name with progress tracker
-            if (selectedFileName != null)
-              ProgressTrackerContainer(selectedFileName: selectedFileName),
+              // Show selected file name with progress tracker
+              if (selectedFileName != null)
+                ProgressTrackerContainer(selectedFileName: selectedFileName),
+              if (apiRawJson != null || gptResponse != null)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: 20),
+                    Text(
+                      "🧾 Extracted Medical Data (JSON):",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        border: Border.all(color: Colors.deepPurple),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: SelectableText(
+                        apiRawJson ?? '',
+                        style: TextStyle(fontFamily: 'Courier', fontSize: 13),
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    Text(
+                      "🤖 GPT Health Plan:",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        border: Border.all(color: Colors.teal),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: SelectableText(
+                        gptResponse ?? '',
+                        style: TextStyle(fontSize: 14),
+                      ),
+                    ),
+                  ],
+                ),
+              SizedBox(height: 30),
 
-            SizedBox(height: 30),
-
-            // Save Button
-          ],
+              // Save Button
+            ],
+          ),
         ),
       ),
     );
