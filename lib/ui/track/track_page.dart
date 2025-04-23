@@ -4,6 +4,7 @@ import 'package:roo_mobile/ui/components/bottom_sheet.dart';
 import 'package:roo_mobile/ui/components/chat.dart';
 import 'package:roo_mobile/ui/track/action_card.dart';
 import 'package:roo_mobile/ui/track/components/period/period_calendar.dart';
+import 'package:roo_mobile/ui/track/health/main.dart';
 import 'package:roo_mobile/ui/track/secondary_action_card.dart';
 import 'package:roo_mobile/ui/track/data.dart';
 
@@ -15,36 +16,14 @@ class TrackPage extends StatefulWidget {
 }
 
 class _TrackPageState extends State<TrackPage> {
-  String selectedCategory = "Trending";
+  String selectedCategory = "Health";
   final types = HealthDataCardType.values;
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
     return Scaffold(
       backgroundColor: Colors.grey[200],
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
-        child: _buildCurrentView(context),
-      ),
-    );
-  }
-
-  Widget _buildCurrentView(BuildContext context) {
-    switch (selectedCategory) {
-      case "Period":
-        return periodView();
-      case "Medical":
-        return medicalReportView();
-      default:
-        return homeView(context);
-    }
-  }
-
-  Widget homeView(BuildContext context) {
-    final mediaQuery = MediaQuery.of(context);
-    final screenHeight = mediaQuery.size.height;
-
-    return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white, // match Scaffold background if needed
         elevation: 0,
@@ -69,70 +48,65 @@ class _TrackPageState extends State<TrackPage> {
           const SizedBox(width: 12), // spacing at end
         ],
       ),
-      body: SingleChildScrollView(
-        child: Container(
-          color: Colors.grey.shade200,
-          padding: EdgeInsets.only(top: screenHeight * 0.025),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              // Category Selector
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: screenHeight * 0.03),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children:
-                      ["Health", "Diet", "Workout"].map((category) {
-                        final isSelected = selectedCategory == category;
-                        return GestureDetector(
-                          onTap:
-                              () => setState(
-                                () =>
-                                    selectedCategory =
-                                        isSelected ? "Trending" : category,
-                              ),
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: screenHeight * 0.03,
-                              vertical: screenHeight * 0.0125,
+
+      body: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: screenHeight * 0.03,
+              vertical: screenHeight * 0.02,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children:
+                  ["Health", "Diet", "Workout"].map((category) {
+                    final isSelected = selectedCategory == category;
+                    return GestureDetector(
+                      onTap: () => setState(() => selectedCategory = category),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: screenHeight * 0.03,
+                          vertical: screenHeight * 0.0125,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSelected ? Colors.black : Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.shade100,
+                              blurRadius: 1,
                             ),
-                            decoration: BoxDecoration(
-                              color: isSelected ? Colors.black : Colors.white,
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey.shade100,
-                                  blurRadius: 1,
-                                ),
-                              ],
-                            ),
-                            child: Text(
-                              category,
-                              style: TextStyle(
-                                color:
-                                    isSelected
-                                        ? Colors.white
-                                        : Colors.deepPurpleAccent,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                          ],
+                        ),
+                        child: Text(
+                          category,
+                          style: TextStyle(
+                            color:
+                                isSelected
+                                    ? Colors.white
+                                    : Colors.deepPurpleAccent,
+                            fontWeight: FontWeight.w600,
                           ),
-                        );
-                      }).toList(),
-                ),
-              ),
-
-              SizedBox(height: screenHeight * 0.03),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                child: _buildTabCurrentView(context),
-              ),
-
-              // Horizontal Primary Actions
-            ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+            ),
           ),
-        ),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: _buildTabCurrentView(context),
+            switchInCurve: Curves.easeIn,
+            switchOutCurve: Curves.easeOut,
+            layoutBuilder:
+                (currentChild, previousChildren) => Stack(
+                  children: <Widget>[
+                    ...previousChildren,
+                    if (currentChild != null) currentChild,
+                  ],
+                ),
+          ),
+        ],
       ),
     );
   }
@@ -140,7 +114,7 @@ class _TrackPageState extends State<TrackPage> {
   Widget _buildTabCurrentView(BuildContext context) {
     switch (selectedCategory) {
       case "Health":
-        return defaultTabView(context);
+        return HealthPage();
       case "Diet":
         return defaultTabView(context);
       case "Workout":
@@ -208,22 +182,6 @@ class _TrackPageState extends State<TrackPage> {
 
         SizedBox(height: screenHeight * 0.1),
       ],
-    );
-  }
-
-  Widget periodView() {
-    return PeriodCalendarSheetContent(
-      onBackToHome:
-          () =>
-              setState(() => selectedCategory = "Trending"), // 👈 switches back
-    );
-  }
-
-  Widget medicalReportView() {
-    return MedicalReportUploadContent(
-      onBackToHome:
-          () =>
-              setState(() => selectedCategory = "Trending"), // 👈 switches back
     );
   }
 

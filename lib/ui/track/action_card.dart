@@ -36,7 +36,7 @@ class _ActionCardState extends State<ActionCard> {
     if (Platform.isIOS) {
       final deviceInfo = await DeviceInfoPlugin().iosInfo;
       if (!deviceInfo.isPhysicalDevice) {
-        debugPrint("Skipping HealthKit: running in iOS Simulator");
+        //debugPrint("Skipping HealthKit: running in iOS Simulator");
         return;
       }
     }

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer' show log;
+import 'dart:io';
 
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -64,6 +65,9 @@ class AuthGate extends StatefulWidget {
 }
 
 class _AuthGateState extends State<AuthGate> {
+  bool _hasError = false;
+  bool _checking = true;
+
   @override
   void initState() {
     super.initState();
@@ -71,12 +75,18 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   Future<void> _checkAuthStatus() async {
-    final user = FirebaseAuth.instance.currentUser;
+    setState(() {
+      _checking = true;
+      _hasError = false;
+    });
 
-    if (user == null) {
-      _goToLogin();
-    } else {
-      print("User is logged in: ${user.email}");
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        _goToLogin();
+        return;
+      }
+
       final token = await user.getIdToken();
       final response = await http.post(
         Uri.parse('${EnvConfig.baseUrl}/auth-login'),
@@ -84,16 +94,32 @@ class _AuthGateState extends State<AuthGate> {
         body: jsonEncode({'firebase_token': token, 'email': user.email}),
       );
 
-      print("\n\n*******************");
-      print("Response Auth Login: ${response.body}");
-      print("*******************\n\n");
-
       if (response.statusCode == 200) {
         _goToHome();
       } else {
-        await FirebaseAuth.instance.signOut(); // kill bad session
+        await FirebaseAuth.instance.signOut();
         _goToLogin();
       }
+    } on SocketException catch (_) {
+      // no network / connection refused
+      setState(() {
+        _hasError = true;
+      });
+    } on http.ClientException catch (_) {
+      // other http client errors
+      setState(() {
+        _hasError = true;
+      });
+    } catch (e, st) {
+      // unexpected
+      debugPrint('AuthGate error: $e\n$st');
+      setState(() {
+        _hasError = true;
+      });
+    } finally {
+      setState(() {
+        _checking = false;
+      });
     }
   }
 
@@ -102,7 +128,7 @@ class _AuthGateState extends State<AuthGate> {
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => MyHomePage()),
+        MaterialPageRoute(builder: (_) => MyHomePage()),
       );
     });
   }
@@ -112,30 +138,77 @@ class _AuthGateState extends State<AuthGate> {
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => LoginPage()),
+        MaterialPageRoute(builder: (_) => LoginPage()),
       );
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            "Getting Ready ",
-            style: GoogleFonts.sriracha(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: const Color.fromARGB(255, 106, 0, 255),
+    if (_checking) {
+      // still trying
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Getting Ready",
+                style: GoogleFonts.sriracha(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: const Color.fromARGB(255, 106, 0, 255),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const CircularProgressIndicator(color: Colors.deepPurple),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_hasError) {
+      // show "no internet / retry" screen
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('Oops!', style: largeText(color: Colors.white)),
+          backgroundColor: Color.fromARGB(255, 106, 0, 255),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.wifi_off, size: 80, color: Colors.grey[700]),
+                const SizedBox(height: 16),
+                Text(
+                  'No internet connection.\nPlease check your network and try again.',
+                  textAlign: TextAlign.center,
+                  style: mediumText(),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: _checkAuthStatus,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color.fromARGB(255, 106, 0, 255),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 12,
+                    ),
+                  ),
+                  child: Text('Retry', style: mediumText(color: Colors.white)),
+                ),
+              ],
             ),
           ),
-          SizedBox(height: 24),
-          Center(child: CircularProgressIndicator(color: Colors.deepPurple)),
-        ],
-      ),
-    );
+        ),
+      );
+    }
+
+    // default fallback (shouldn't get here)
+    return const SizedBox.shrink();
   }
 }
 

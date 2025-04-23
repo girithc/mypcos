@@ -10,6 +10,31 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+void showPeriodCalendarBottomSheet(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent, // Make background transparent
+    builder: (BuildContext context) {
+      return DraggableScrollableSheet(
+        initialChildSize: 0.9,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (BuildContext context, ScrollController scrollController) {
+          return Container(
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: PeriodCalendarSheetContent(), // Your actual content
+          );
+        },
+      );
+    },
+  );
+}
+
 class PeriodLog {
   final List<DateTime> days;
   final Map<String, bool> symptoms;
@@ -163,6 +188,9 @@ class _PeriodCalendarSheetContentState
     super.dispose();
   }
 
+  Set<DateTime> _prepopulatedDates = {};
+  Set<DateTime> _userSelectedDates = {};
+
   Future<void> _fetchLast4MonthsPeriods() async {
     setState(() {
       _isLoading = true;
@@ -184,6 +212,8 @@ class _PeriodCalendarSheetContentState
         body: jsonEncode({'firebase_token': token}),
       );
 
+      print("Response: ${resp.body}");
+
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body) as Map<String, dynamic>;
         final periods = data['periods'] as List<dynamic>;
@@ -203,6 +233,7 @@ class _PeriodCalendarSheetContentState
 
         setState(() {
           _periodDates = loadedDates;
+          _prepopulatedDates = loadedDates;
         });
       } else {
         debugPrint('Error fetching periods: ${resp.statusCode}');
@@ -219,43 +250,111 @@ class _PeriodCalendarSheetContentState
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
-  void _resetCurrentMonth() {
-    setState(() {
-      _periodDates.removeWhere(
-        (date) =>
-            date.year == _focusedDay.year && date.month == _focusedDay.month,
-      );
-    });
-  }
+  Future<void> _resetCurrentMonth() async {
+    final int month = _focusedDay.month;
+    final int year = _focusedDay.year;
 
-  bool _hasDatesThisMonth() {
-    return _periodDates.any(
-      (d) => d.year == _focusedDay.year && d.month == _focusedDay.month,
+    final user = FirebaseAuth.instance.currentUser;
+    final token = await user?.getIdToken();
+    // 1. Show confirmation dialog
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: Row(
+              children: [
+                Icon(Icons.warning, color: Colors.red),
+                SizedBox(width: 8),
+                Text('Reset Month?', style: largeText()),
+              ],
+            ),
+            content: Text(
+              'This will remove all period data for $month/$year.',
+              style: mediumText(color: Colors.black54),
+            ),
+            actions: [
+              TextButton(
+                style: TextButton.styleFrom(backgroundColor: Colors.white),
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: Text('No', style: mediumText(color: Colors.black)),
+              ),
+              TextButton(
+                style: TextButton.styleFrom(backgroundColor: Colors.black),
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: Text('Yes', style: mediumText(color: Colors.white)),
+              ),
+            ],
+          ),
     );
+
+    if (confirmed != true) {
+      // User chose No or dismissed dialog.
+      print('User canceled the reset.');
+      return;
+    }
+
+    try {
+      // 2. Send POST request
+      final response = await http.post(
+        Uri.parse('${EnvConfig.baseUrl}/period-calendar-reset'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'firebase_token': token,
+          'month': month,
+          'year': year,
+        }),
+      );
+
+      print("Response: ${response.body}");
+
+      if (response.statusCode == 200) {
+        // 3. On success, clear the dates and update UI
+        setState(() {
+          _userSelectedDates.removeWhere(
+            (date) => date.year == year && date.month == month,
+          );
+          _rangeStart = null;
+          _rangeEnd = null;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Current month has been reset.')),
+        );
+      } else {
+        throw Exception('Server responded ${response.statusCode}');
+      }
+    } catch (e) {
+      // 4. On error, show a message
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to reset month: $e')));
+    }
   }
 
+  DateTime? _rangeStart;
+  DateTime? _rangeEnd;
   Future<void> _onDaySelected(DateTime selectedDay, DateTime focusedDay) async {
     setState(() {
       _focusedDay = focusedDay;
-      bool isAlreadySelected = _periodDates.any(
-        (d) => _isSameDay(d, selectedDay),
-      );
-      DateTime previousDay = selectedDay.subtract(Duration(days: 1));
-      DateTime nextDay = selectedDay.add(Duration(days: 1));
-      bool hasAdjacentBefore = _periodDates.any(
-        (d) => _isSameDay(d, previousDay),
-      );
-      bool hasAdjacentAfter = _periodDates.any((d) => _isSameDay(d, nextDay));
 
-      if (!isAlreadySelected && !hasAdjacentBefore && !hasAdjacentAfter) {
-        for (int i = 0; i < 5; i++) {
-          _periodDates.add(selectedDay.add(Duration(days: i)));
-        }
-      } else {
-        if (isAlreadySelected) {
-          _periodDates.removeWhere((d) => _isSameDay(d, selectedDay));
+      if (_rangeStart == null || (_rangeStart != null && _rangeEnd != null)) {
+        // Start new selection
+        _rangeStart = selectedDay;
+        _rangeEnd = null;
+        _userSelectedDates.clear();
+        _userSelectedDates.add(selectedDay); // 👈 show the first tap
+      } else if (_rangeStart != null && _rangeEnd == null) {
+        if (selectedDay.isBefore(_rangeStart!)) {
+          _rangeEnd = _rangeStart;
+          _rangeStart = selectedDay;
         } else {
-          _periodDates.add(selectedDay);
+          _rangeEnd = selectedDay;
+        }
+
+        _userSelectedDates.clear();
+        DateTime current = _rangeStart!;
+        while (!current.isAfter(_rangeEnd!)) {
+          _userSelectedDates.add(current);
+          current = current.add(Duration(days: 1));
         }
       }
     });
@@ -263,217 +362,242 @@ class _PeriodCalendarSheetContentState
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
     if (_isLoading) {
       return Center(
         child: CircularProgressIndicator(color: Colors.deepPurpleAccent),
       );
     } else {
-      return Scaffold(
-        backgroundColor: Colors.grey.shade100,
-        appBar: AppBar(
-          title: Text(
-            'Period Calendar',
-            style: largeText(
-              fontWeight: FontWeight.bold,
-              color: Colors.pinkAccent,
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            margin: EdgeInsets.only(
+              top: screenHeight * 0.02,
+              left: screenWidth * 0.05,
+              right: screenWidth * 0.05,
+            ),
+            padding: EdgeInsets.symmetric(
+              vertical: screenHeight * 0.01,
+              horizontal: screenWidth * 0.05,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: Icon(Icons.close, size: 28),
+                  ),
+                ),
+                Center(child: Text("Period Calendar", style: largeText())),
+              ],
             ),
           ),
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios_outlined),
-            onPressed: () {
-              widget.onBackToHome?.call();
-            },
-          ),
-          backgroundColor: Colors.white,
-          elevation: 0,
-          iconTheme: IconThemeData(color: Colors.pinkAccent),
-        ),
-        body: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 24,
-                ),
-                children: [
-                  if (!_showingSymptomsInput) ...[
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        children: [
-                          TableCalendar(
-                            firstDay: _firstDay,
-                            lastDay: _lastDay,
-                            focusedDay: _focusedDay,
-                            selectedDayPredicate:
-                                (day) =>
-                                    _periodDates.any((d) => _isSameDay(d, day)),
-                            onDaySelected: _onDaySelected,
-                            onPageChanged: (day) {
-                              setState(() {
-                                _focusedDay = day;
-                              });
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.symmetric(
+                horizontal: screenWidth * 0.05,
+                vertical: screenHeight * 0.015,
+              ),
+              children: [
+                if (!_showingSymptomsInput) ...[
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        TableCalendar(
+                          firstDay: _firstDay,
+                          lastDay: _lastDay,
+                          focusedDay: _focusedDay,
+                          onDaySelected: _onDaySelected,
+                          onPageChanged: (day) {
+                            setState(() {
+                              _focusedDay = day;
+                            });
+                          },
+                          selectedDayPredicate:
+                              (_) =>
+                                  false, // 👈 disables default Flutter selection ring
+                          calendarStyle: CalendarStyle(
+                            isTodayHighlighted:
+                                false, // 👈 disables the highlight on today
+                            outsideDaysVisible: false,
+                          ),
+                          calendarBuilders: CalendarBuilders(
+                            defaultBuilder: (context, date, _) {
+                              if (_prepopulatedDates.any(
+                                (d) => _isSameDay(d, date),
+                              )) {
+                                return _buildCalendarCell(
+                                  date,
+                                  const Color.fromARGB(255, 255, 110, 219),
+                                );
+                              } else if (_userSelectedDates.any(
+                                (d) => _isSameDay(d, date),
+                              )) {
+                                return _buildCalendarCell(
+                                  date,
+                                  Colors.lightBlue.shade100,
+                                );
+                              }
+                              return null;
                             },
-                            calendarStyle: CalendarStyle(
-                              isTodayHighlighted: true,
-                              selectedDecoration: BoxDecoration(
-                                color: Colors.pinkAccent,
-                                shape: BoxShape.circle,
-                              ),
-                              todayDecoration: BoxDecoration(
-                                color: Colors.pink.withOpacity(0.3),
-                                shape: BoxShape.circle,
-                              ),
-                              weekendTextStyle: TextStyle(
-                                color: Colors.redAccent,
-                              ),
-                              outsideDaysVisible: false,
+                          ),
+                          headerStyle: HeaderStyle(
+                            formatButtonVisible: false,
+                            titleCentered: true,
+                            titleTextStyle: largeText(color: Colors.pinkAccent),
+                            leftChevronIcon: Icon(
+                              Icons.chevron_left,
+                              size: 28,
+                              color: Colors.pinkAccent,
                             ),
-                            headerStyle: HeaderStyle(
-                              formatButtonVisible: false,
-                              titleCentered: true,
-                              titleTextStyle: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                              leftChevronIcon: Icon(
-                                Icons.chevron_left,
-                                size: 28,
-                                color: Colors.black,
-                              ),
-                              rightChevronIcon: Icon(
-                                Icons.chevron_right,
-                                size: 28,
-                                color: Colors.black,
-                              ),
+                            rightChevronIcon: Icon(
+                              Icons.chevron_right,
+                              size: 28,
+                              color: Colors.pinkAccent,
                             ),
                           ),
-                          const SizedBox(height: 12),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: ElevatedButton.icon(
-                              onPressed: _resetCurrentMonth,
-                              icon: Icon(Icons.refresh, size: 22),
-                              label: Text(
-                                "Reset This Month",
-                                style: TextStyle(fontSize: 18),
+                        ),
+                        const SizedBox(height: 12),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: ElevatedButton.icon(
+                            onPressed: _resetCurrentMonth,
+                            icon: Icon(Icons.refresh, size: 22),
+                            label: Text(
+                              "Reset This Month",
+                              style: TextStyle(fontSize: 18),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: const Color.fromARGB(
+                                255,
+                                255,
+                                120,
+                                165,
                               ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 10,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              elevation: 2,
+                            ),
+                          ),
+                        ),
+                        // Add the Cancel and Save buttons here (inside the white container)
+                        const SizedBox(height: 20),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: screenWidth * 0.03,
+                      vertical: screenHeight * 0.01,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        // Cancel button
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            child: ElevatedButton(
+                              onPressed: () => Navigator.of(context).pop(),
                               style: ElevatedButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                backgroundColor: const Color.fromARGB(
-                                  255,
-                                  255,
-                                  120,
-                                  165,
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                  vertical: 10,
+                                backgroundColor: Colors.white,
+                                foregroundColor: Colors.black,
+                                padding: EdgeInsets.symmetric(
+                                  vertical: screenHeight * 0.01,
                                 ),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
-                                elevation: 2,
+                                elevation: 0,
+                              ),
+                              child: Text(
+                                'Cancel',
+                                style: mediumText(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
+                                ),
                               ),
                             ),
                           ),
-                          // Add the Cancel and Save buttons here (inside the white container)
-                          const SizedBox(height: 20),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    if (_hasDatesThisMonth()) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 16,
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            // Cancel button
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                ),
-                                child: ElevatedButton(
-                                  onPressed: () => Navigator.of(context).pop(),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: Colors.black,
-                                    padding: EdgeInsets.symmetric(vertical: 12),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    elevation: 0,
-                                  ),
-                                  child: Text(
-                                    'Cancel',
-                                    style: mediumText(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            // Save button
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                ),
-                                child: ElevatedButton(
-                                  // Add your save logic here
-                                  //Navigator.of(context).pop();
-                                  onPressed: () async {
-                                    await _sendFullMonthPeriodData();
-                                  },
+                        // Save button
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            child: ElevatedButton(
+                              // Add your save logic here
+                              //Navigator.of(context).pop();
+                              onPressed: () async {
+                                await _sendFullMonthPeriodData();
+                              },
 
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.pinkAccent,
-                                    foregroundColor: Colors.white,
-                                    padding: EdgeInsets.symmetric(vertical: 12),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    elevation: 0,
-                                  ),
-                                  child: Text(
-                                    'Save',
-                                    style: mediumText(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.pinkAccent,
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(
+                                  vertical: screenHeight * 0.01,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: Text(
+                                'Save',
+                                style: mediumText(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
                                 ),
                               ),
                             ),
-                          ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ] else ...[
-                    PeriodSymptomsPage(
-                      periodId: _selectedPeriodId,
-                      onDone: () => _toggleSymptomsInput(false),
+                      ],
                     ),
-                  ],
+                  ),
+                ] else ...[
+                  PeriodSymptomsPage(
+                    periodId: _selectedPeriodId,
+                    onDone: () => _toggleSymptomsInput(false),
+                  ),
                 ],
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       );
     }
+  }
+
+  Widget _buildCalendarCell(DateTime date, Color color) {
+    return Container(
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      alignment: Alignment.center,
+      margin: const EdgeInsets.all(4),
+      child: Text('${date.day}', style: TextStyle(color: Colors.black)),
+    );
   }
 }

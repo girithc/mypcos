@@ -146,6 +146,11 @@ class _PeriodSymptomsPageState extends State<PeriodSymptomsPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Display the fetched date range
+          Text(
+            'Period Selected',
+            style: mediumText(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
           Container(
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
