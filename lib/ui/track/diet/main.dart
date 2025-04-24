@@ -15,14 +15,14 @@ import 'package:roo_mobile/ui/track/components/period/period_calendar.dart';
 import 'package:roo_mobile/ui/track/secondary_action_card.dart';
 import 'package:roo_mobile/utils/constants.dart';
 
-class HealthPage extends StatefulWidget {
-  const HealthPage({super.key});
+class DietPage extends StatefulWidget {
+  const DietPage({super.key});
 
   @override
-  State<HealthPage> createState() => _HealthPageState();
+  State<DietPage> createState() => _DietPageState();
 }
 
-class _HealthPageState extends State<HealthPage> {
+class _DietPageState extends State<DietPage> {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
@@ -36,15 +36,11 @@ class _HealthPageState extends State<HealthPage> {
             children: [
               Padding(
                 padding: EdgeInsets.only(left: screenHeight * 0.018),
-                child: ActionCard(title: "Drink Water"),
+                child: ActionCard(title: "AI Diet Plan"),
               ),
               Padding(
                 padding: EdgeInsets.only(left: screenHeight * 0.018),
-                child: ActionCard(title: "Take Medicine"),
-              ),
-              Padding(
-                padding: EdgeInsets.only(left: screenHeight * 0.018),
-                child: ActionCard(title: "Track Steps"),
+                child: ActionCard(title: "AI Workout Plan"),
               ),
             ],
           ),
@@ -54,7 +50,7 @@ class _HealthPageState extends State<HealthPage> {
         Padding(
           padding: EdgeInsets.all(screenHeight * 0.03),
           child: Text(
-            "Actions",
+            "Files",
             style: GoogleFonts.sriracha(
               fontSize: 28,
               fontWeight: FontWeight.w800,
@@ -64,15 +60,35 @@ class _HealthPageState extends State<HealthPage> {
         ),
 
         // Secondary Action Cards (2)
-        SecondaryActionCard(
-          title: "Period Calendar",
-          subtitle: "Track your period",
-          iconsSrc: "assets/icons/calendar.png",
-          colorl: tertiary,
-          trailingIcon: Icon(Icons.calendar_today),
-          onTapCallback: () {
-            showPeriodCalendarBottomSheet(context);
-          },
+        Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: screenHeight * 0.03,
+            vertical: screenHeight * 0.015,
+          ),
+          child: SecondaryActionCard(
+            title: "Period Calendar",
+            iconsSrc: "assets/icons/calendar.png",
+            colorl: Colors.pinkAccent,
+            trailingIcon: Icon(Icons.calendar_today),
+            onTapCallback: () {
+              showPeriodCalendarBottomSheet(context);
+            },
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: screenHeight * 0.03,
+            vertical: screenHeight * 0.015,
+          ),
+          child: SecondaryActionCard(
+            title: "Upload Medical Report",
+            iconsSrc: "assets/icons/report.png",
+            colorl: Colors.lightBlue,
+            trailingIcon: Icon(Icons.upload_file),
+            onTapCallback: () {
+              showMedicalReportUploadSheet(context, defaultTabIndex: 2);
+            },
+          ),
         ),
 
         SizedBox(height: screenHeight * 0.1),

@@ -7,9 +7,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:roo_mobile/ui/components/bottom_sheet.dart';
 import 'package:roo_mobile/utils/constants.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void showMedicalReportUploadSheet(
   BuildContext context, {
@@ -56,6 +58,20 @@ class MedicalReportUploadContentState
   String? selectedFileName;
   String? apiRawJson;
   String? gptResponse;
+  String? firebaseToken;
+
+  @override
+  void initState() {
+    super.initState();
+    _getFirebaseToken();
+  }
+
+  Future<void> _getFirebaseToken() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      firebaseToken = await user.getIdToken();
+    }
+  }
 
   Future<File> _loadBundledPDF() async {
     final byteData = await rootBundle.load('assets/file/blood_report.pdf');
@@ -69,73 +85,47 @@ class MedicalReportUploadContentState
     return file;
   }
 
-  Future<void> _uploadBundledPDF() async {
-    final file = await _loadBundledPDF();
-    setState(() {
-      selectedFileName = 'medical_report.pdf';
-    });
-    await _uploadFile(file);
-  }
-
-  Future<void> _uploadFile(File file) async {
-    final apiUrl = '${EnvConfig.baseUrl}/upload-report';
-
-    // 1) grab the Firebase ID token for auth
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      setState(() {
-        apiRawJson = null;
-        gptResponse = 'Error: not signed in';
-      });
-      return;
-    }
-    final token = await user.getIdToken();
-
-    // 2) build multipart request
-    final request =
-        http.MultipartRequest('POST', Uri.parse(apiUrl))
-          // add token as a normal form field
-          ..fields['firebase_token'] = token!
-          // add the file part (binary)
-          ..files.add(await http.MultipartFile.fromPath('file', file.path));
-
-    /*
-    We use MultipartRequest/MultipartFile because:
-    - It sets up `Content-Type: multipart/form-data` with the proper boundary for you.
-    - It lets you mix text fields (firebase_token) and binary file parts in one request.
-    - Standard JSON bodies can't carry a raw PDF in the same payload.
-  */
+  Future<void> uploadAndGetUrl() async {
+    final supabase = Supabase.instance.client;
+    final ImagePicker picker = ImagePicker();
 
     try {
-      final streamed = await request.send();
-      print("Response status: ${streamed.statusCode}");
-      if (streamed.statusCode == 200) {
-        final res = await http.Response.fromStream(streamed);
-        print('Response body: ${res.body}');
-        final decoded = jsonDecode(res.body);
-
-        setState(() {
-          apiRawJson = const JsonEncoder.withIndent(
-            '  ',
-          ).convert(decoded['json_data']);
-          gptResponse = decoded['gpt_response'];
-        });
-
-        print('✅ JSON Data: $apiRawJson');
-        print('✅ GPT Response: $gptResponse');
-      } else {
-        setState(() {
-          apiRawJson = null;
-          gptResponse = 'Failed with status: ${streamed.statusCode}';
-        });
-        print('❌ Upload failed: ${streamed.statusCode}');
+      // Let user pick an image
+      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+      if (image == null) {
+        print('❌ No image selected.');
+        return;
       }
-    } catch (e) {
+
+      final File file = File(image.path);
+      final String fileName =
+          'uploads/${DateTime.now().millisecondsSinceEpoch}_${image.name}';
+
+      // Upload to Supabase
+      final fileBytes = await file.readAsBytes();
+      await supabase.storage
+          .from('your-bucket-name')
+          .uploadBinary(
+            fileName,
+            fileBytes,
+            fileOptions: const FileOptions(contentType: 'image/jpeg'),
+          );
+
+      // Get public URL
+      final String publicUrl = supabase.storage
+          .from('your-bucket-name')
+          .getPublicUrl(fileName);
+      print('✅ Uploaded! Public URL: $publicUrl');
+
+      // Optionally store or use the URL
       setState(() {
-        apiRawJson = null;
-        gptResponse = 'Error uploading file: $e';
+        gptResponse = "✅ Uploaded!\n$publicUrl";
       });
-      print('❌ Exception during upload: $e');
+    } catch (e) {
+      print('❌ Upload failed: $e');
+      setState(() {
+        gptResponse = 'Upload failed: $e';
+      });
     }
   }
 
@@ -192,37 +182,45 @@ class MedicalReportUploadContentState
                     // TabBar inside the card header
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Color.fromARGB(255, 106, 0, 255),
                         borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(8),
                           topRight: Radius.circular(8),
                         ),
                       ),
-                      child: TabBar(
-                        dividerColor: Colors.transparent,
-                        indicatorColor: Color.fromARGB(255, 106, 0, 255),
-                        labelColor: Colors.white,
-                        unselectedLabelColor: Colors.black,
-                        tabs: [
-                          Tab(
-                            text: 'Insights',
-                            style: mediumText(
-                              color: Color.fromARGB(255, 106, 0, 255),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Color.fromARGB(255, 106, 0, 255),
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(8),
+                            topRight: Radius.circular(8),
+                          ),
+                        ),
+                        child: TabBar(
+                          // fill whole tab with white when selected
+                          indicator: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(8),
+                              topRight: Radius.circular(8),
                             ),
                           ),
-                          Tab(
-                            text: 'Manage',
-                            style: mediumText(
-                              color: Color.fromARGB(255, 106, 0, 255),
-                            ),
-                          ),
-                          Tab(
-                            text: 'Upload',
-                            style: mediumText(
-                              color: Color.fromARGB(255, 106, 0, 255),
-                            ),
-                          ),
-                        ],
+                          indicatorSize: TabBarIndicatorSize.tab,
+
+                          // selected text = black, unselected = white
+                          labelColor: Colors.black87,
+                          unselectedLabelColor: Colors.white,
+
+                          // optional: tweak font size / weight
+                          labelStyle: smallText(fontWeight: FontWeight.bold),
+                          unselectedLabelStyle: smallText(),
+
+                          tabs: [
+                            Tab(text: 'Insights'),
+                            Tab(text: 'Manage'),
+                            Tab(text: 'Upload'),
+                          ],
+                        ),
                       ),
                     ),
                     // TabBarView inside the card body
@@ -286,7 +284,7 @@ class MedicalReportUploadContentState
                                       vertical: 5,
                                     ),
                                     child: ElevatedButton.icon(
-                                      onPressed: _uploadBundledPDF,
+                                      onPressed: uploadAndGetUrl,
                                       icon: Icon(
                                         Icons.upload_file,
                                         color: Colors.white,
@@ -323,10 +321,6 @@ class MedicalReportUploadContentState
                                 SizedBox(height: 30),
 
                                 // Show selected file name with progress tracker
-                                if (selectedFileName != null)
-                                  ProgressTrackerContainer(
-                                    selectedFileName: selectedFileName,
-                                  ),
                                 if (apiRawJson != null || gptResponse != null)
                                   Column(
                                     crossAxisAlignment:

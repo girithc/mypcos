@@ -6,11 +6,9 @@ import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flashy_tab_bar2/flashy_tab_bar2.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:roo_mobile/utils/firebase_options.dart';
 import 'package:roo_mobile/ui/components/bottom_sheet.dart';
@@ -21,10 +19,16 @@ import 'package:roo_mobile/ui/explore/library.dart';
 import 'package:roo_mobile/ui/track/track_page.dart';
 import 'package:roo_mobile/utils/constants.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Supabase.initialize(
+    url: "https://itbezvuwkxkjvmwazicb.supabase.co",
+    anonKey:
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0YmV6dnV3a3hranZtd2F6aWNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzI3ODk4NDIsImV4cCI6MjA0ODM2NTg0Mn0.TI1t_5chVA3x0vhMsbTWQPQIWZIoLnpz8-odSKSQ-C4",
+  );
   runApp(const App());
 }
 
@@ -220,32 +224,9 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
-
   @override
   void initState() {
     super.initState();
-  }
-
-  // Sign in with Google
-  Future<void> _signInWithGoogle(BuildContext context) async {
-    try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return;
-
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      UserCredential authResult = await FirebaseAuth.instance
-          .signInWithCredential(credential);
-      _handleAuthSuccess(authResult);
-    } catch (e) {
-      log('Google Sign-In Error: $e');
-    }
   }
 
   // Sign in with Apple

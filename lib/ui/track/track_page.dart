@@ -4,6 +4,8 @@ import 'package:roo_mobile/ui/components/bottom_sheet.dart';
 import 'package:roo_mobile/ui/components/chat.dart';
 import 'package:roo_mobile/ui/track/action_card.dart';
 import 'package:roo_mobile/ui/track/components/period/period_calendar.dart';
+import 'package:roo_mobile/ui/track/diet/main.dart';
+import 'package:roo_mobile/ui/track/data/main.dart';
 import 'package:roo_mobile/ui/track/health/main.dart';
 import 'package:roo_mobile/ui/track/secondary_action_card.dart';
 import 'package:roo_mobile/ui/track/data.dart';
@@ -16,7 +18,7 @@ class TrackPage extends StatefulWidget {
 }
 
 class _TrackPageState extends State<TrackPage> {
-  String selectedCategory = "Health";
+  String selectedCategory = "Period";
   final types = HealthDataCardType.values;
 
   @override
@@ -49,76 +51,80 @@ class _TrackPageState extends State<TrackPage> {
         ],
       ),
 
-      body: Column(
-        children: [
-          Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: screenHeight * 0.03,
-              vertical: screenHeight * 0.02,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children:
-                  ["Health", "Diet", "Workout"].map((category) {
-                    final isSelected = selectedCategory == category;
-                    return GestureDetector(
-                      onTap: () => setState(() => selectedCategory = category),
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: screenHeight * 0.03,
-                          vertical: screenHeight * 0.0125,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected ? Colors.black : Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.shade100,
-                              blurRadius: 1,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: screenHeight * 0.02,
+                vertical: screenHeight * 0.02,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children:
+                    ["Period", "Data"].map((category) {
+                      final isSelected = selectedCategory == category;
+                      return GestureDetector(
+                        onTap:
+                            () => setState(() => selectedCategory = category),
+                        child: Container(
+                          margin: EdgeInsets.only(right: screenHeight * 0.03),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: screenHeight * 0.03,
+                            vertical: screenHeight * 0.0125,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isSelected ? Colors.black : Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.shade100,
+                                blurRadius: 1,
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            category,
+                            style: TextStyle(
+                              color:
+                                  isSelected
+                                      ? Colors.white
+                                      : Colors.deepPurpleAccent,
+                              fontWeight: FontWeight.w600,
                             ),
-                          ],
-                        ),
-                        child: Text(
-                          category,
-                          style: TextStyle(
-                            color:
-                                isSelected
-                                    ? Colors.white
-                                    : Colors.deepPurpleAccent,
-                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                      ),
-                    );
-                  }).toList(),
+                      );
+                    }).toList(),
+              ),
             ),
-          ),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: _buildTabCurrentView(context),
-            switchInCurve: Curves.easeIn,
-            switchOutCurve: Curves.easeOut,
-            layoutBuilder:
-                (currentChild, previousChildren) => Stack(
-                  children: <Widget>[
-                    ...previousChildren,
-                    if (currentChild != null) currentChild,
-                  ],
-                ),
-          ),
-        ],
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: _buildTabCurrentView(context),
+              switchInCurve: Curves.easeIn,
+              switchOutCurve: Curves.easeOut,
+              layoutBuilder:
+                  (currentChild, previousChildren) => Stack(
+                    children: <Widget>[
+                      ...previousChildren,
+                      if (currentChild != null) currentChild,
+                    ],
+                  ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildTabCurrentView(BuildContext context) {
     switch (selectedCategory) {
-      case "Health":
+      case "Period":
         return HealthPage();
       case "Diet":
-        return defaultTabView(context);
-      case "Workout":
-        return defaultTabView(context);
+        return DietPage();
+      case "Data":
+        return FilePage();
       default:
         return defaultTabView(context);
     }

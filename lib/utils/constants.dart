@@ -43,3 +43,7 @@ TextStyle largeText({
     color: color,
   );
 }
+
+Color primaryColor = Colors.greenAccent;
+Color secondaryColor = Colors.greenAccent.shade400;
+Color tertiary = Colors.greenAccent.shade200;
