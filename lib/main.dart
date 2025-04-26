@@ -170,11 +170,11 @@ class _AuthGateState extends State<AuthGate> {
                 style: GoogleFonts.sriracha(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: const Color.fromARGB(255, 106, 0, 255),
+                  color: Colors.pinkAccent.shade200,
                 ),
               ),
               const SizedBox(height: 24),
-              const CircularProgressIndicator(color: Colors.deepPurple),
+              CircularProgressIndicator(color: Colors.pinkAccent.shade200),
             ],
           ),
         ),
@@ -349,7 +349,7 @@ class _LoginPageState extends State<LoginPage> {
                 style: GoogleFonts.sriracha(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: primaryColor,
+                  color: Colors.pinkAccent.shade200,
                 ),
                 child: AnimatedTextKit(
                   pause: const Duration(seconds: 2),
