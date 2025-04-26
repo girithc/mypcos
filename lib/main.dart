@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' show log;
 import 'dart:io';
@@ -84,47 +85,55 @@ class _AuthGateState extends State<AuthGate> {
       _hasError = false;
     });
 
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        _goToLogin();
-        return;
-      }
-
-      final token = await user.getIdToken();
-      final response = await http.post(
-        Uri.parse('${EnvConfig.baseUrl}/auth-login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'firebase_token': token, 'email': user.email}),
-      );
-
-      if (response.statusCode == 200) {
-        _goToHome();
-      } else {
-        await FirebaseAuth.instance.signOut();
-        _goToLogin();
-      }
-    } on SocketException catch (_) {
-      // no network / connection refused
-      setState(() {
-        _hasError = true;
-      });
-    } on http.ClientException catch (_) {
-      // other http client errors
-      setState(() {
-        _hasError = true;
-      });
-    } catch (e, st) {
-      // unexpected
-      debugPrint('AuthGate error: $e\n$st');
-      setState(() {
-        _hasError = true;
-      });
-    } finally {
-      setState(() {
-        _checking = false;
-      });
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      _goToLogin();
+      return;
     }
+
+    final token = await user.getIdToken();
+
+    int retries = 0;
+    const maxRetries = 3;
+    const retryDelay = Duration(seconds: 10);
+
+    while (retries < maxRetries) {
+      try {
+        final response = await http
+            .post(
+              Uri.parse('${EnvConfig.baseUrl}/auth-login'),
+              headers: {'Content-Type': 'application/json'},
+              body: jsonEncode({'firebase_token': token, 'email': user.email}),
+            )
+            .timeout(const Duration(seconds: 25)); // generous timeout
+
+        if (response.statusCode == 200) {
+          _goToHome();
+          return;
+        } else {
+          // Invalid token or server returned error
+          await FirebaseAuth.instance.signOut();
+          _goToLogin();
+          return;
+        }
+      } on SocketException catch (_) {
+        debugPrint('Network error');
+      } on TimeoutException catch (_) {
+        debugPrint('Request timed out');
+      } catch (e, st) {
+        debugPrint('Unexpected auth error: $e\n$st');
+      }
+
+      // Retry after a delay
+      await Future.delayed(retryDelay);
+      retries++;
+    }
+
+    // If all retries fail
+    setState(() {
+      _hasError = true;
+      _checking = false;
+    });
   }
 
   void _goToHome() {
@@ -340,7 +349,7 @@ class _LoginPageState extends State<LoginPage> {
                 style: GoogleFonts.sriracha(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: const Color.fromARGB(255, 106, 0, 255),
+                  color: primaryColor,
                 ),
                 child: AnimatedTextKit(
                   pause: const Duration(seconds: 2),
@@ -348,7 +357,7 @@ class _LoginPageState extends State<LoginPage> {
                   isRepeatingAnimation: true,
                   animatedTexts: [
                     TypewriterAnimatedText(
-                      'Welcome to Roo',
+                      'Welcome to MyPCOS',
                       speed: const Duration(milliseconds: 200),
                     ),
                     TypewriterAnimatedText(
@@ -441,10 +450,11 @@ class MyHomePageState extends State<MyHomePage> {
   /// Use a getter instead of a final list
   List<Widget> get tabItems => [
     TrackPage(), //HomePage(),
-    HomeScreen(),
     ChatPage(), // ✅ Dynamic switching
-    ChatHomePage(),
-    LibraryPage(),
+    HomeScreen(),
+
+    //ChatHomePage(),
+    //LibraryPage(),
   ];
 
   @override
@@ -460,7 +470,7 @@ class MyHomePageState extends State<MyHomePage> {
         iconSize: 30,
         showElevation: false,
         onItemSelected: (index) {
-          if (index == 2) {
+          if (index == 1) {
             showChatBottomSheet(context);
           } else {
             setState(() {
@@ -469,14 +479,41 @@ class MyHomePageState extends State<MyHomePage> {
           }
         },
         items: [
-          FlashyTabBarItem(icon: Icon(Icons.home), title: Text('Home')),
-          FlashyTabBarItem(icon: Icon(Icons.store), title: Text('Store')),
-          FlashyTabBarItem(icon: Icon(Icons.auto_awesome), title: Text('Roo')),
-          FlashyTabBarItem(icon: Icon(Icons.chat), title: Text('Chat')),
           FlashyTabBarItem(
-            icon: Icon(Icons.collections),
-            title: Text('Explore'),
+            icon: Icon(Icons.home, color: Colors.pinkAccent.shade200),
+            title: Text(
+              'Home',
+              style: mediumText(fontWeight: FontWeight.normal),
+            ),
           ),
+          FlashyTabBarItem(
+            icon: Icon(Icons.auto_awesome, color: Colors.pinkAccent.shade200),
+            title: Text('Roo', style: smallText()),
+          ),
+          FlashyTabBarItem(
+            icon: Icon(Icons.store, color: Colors.pinkAccent.shade200),
+            title: Text(
+              'Store',
+              style: mediumText(fontWeight: FontWeight.normal),
+            ),
+          ),
+          /*
+          FlashyTabBarItem(
+            icon: Icon(Icons.chat, color: Colors.pinkAccent.shade200),
+            title: Text(
+              'Chat',
+              style: mediumText(fontWeight: FontWeight.normal),
+            ),
+          ),
+          
+          FlashyTabBarItem(
+            icon: Icon(Icons.collections, color: Colors.pinkAccent.shade200),
+            title: Text(
+              'Explore',
+              style: mediumText(fontWeight: FontWeight.normal),
+            ),
+          ),
+          */
         ],
       ),
     );

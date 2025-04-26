@@ -1,17 +1,9 @@
-import 'dart:convert';
-import 'dart:io';
-
-import 'package:dotted_border/dotted_border.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
-import 'package:roo_mobile/ui/components/bottom_sheet.dart';
 import 'package:roo_mobile/ui/track/action_card.dart';
 import 'package:roo_mobile/ui/track/components/medical/upload_report.dart';
-import 'package:roo_mobile/ui/track/components/period/period_calendar.dart';
+import 'package:roo_mobile/ui/track/health/period/period_calendar.dart';
 import 'package:roo_mobile/ui/track/secondary_action_card.dart';
 import 'package:roo_mobile/utils/constants.dart';
 
@@ -36,11 +28,19 @@ class _DietPageState extends State<DietPage> {
             children: [
               Padding(
                 padding: EdgeInsets.only(left: screenHeight * 0.018),
-                child: ActionCard(title: "AI Diet Plan"),
+                child: ActionCard(
+                  title: "AI Diet Plan",
+                  titleWidget: Text("AI Diet Plan", style: largeText()),
+                  indicatorWidget: Text("12 Days", style: mediumText()),
+                ),
               ),
               Padding(
                 padding: EdgeInsets.only(left: screenHeight * 0.018),
-                child: ActionCard(title: "AI Workout Plan"),
+                child: ActionCard(
+                  title: "AI Workout Plan",
+                  titleWidget: Text("AI Workout Plan", style: largeText()),
+                  indicatorWidget: Text("12 Steps", style: mediumText()),
+                ),
               ),
             ],
           ),
@@ -66,27 +66,13 @@ class _DietPageState extends State<DietPage> {
             vertical: screenHeight * 0.015,
           ),
           child: SecondaryActionCard(
-            title: "Period Calendar",
-            iconsSrc: "assets/icons/calendar.png",
+            title: Text("Period Calendar", style: mediumText()),
+            subtitle: Text("subtitle", style: smallText()),
+            icon: Icon(Icons.calendar_today),
             colorl: Colors.pinkAccent,
             trailingIcon: Icon(Icons.calendar_today),
             onTapCallback: () {
               showPeriodCalendarBottomSheet(context);
-            },
-          ),
-        ),
-        Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: screenHeight * 0.03,
-            vertical: screenHeight * 0.015,
-          ),
-          child: SecondaryActionCard(
-            title: "Upload Medical Report",
-            iconsSrc: "assets/icons/report.png",
-            colorl: Colors.lightBlue,
-            trailingIcon: Icon(Icons.upload_file),
-            onTapCallback: () {
-              showMedicalReportUploadSheet(context, defaultTabIndex: 2);
             },
           ),
         ),

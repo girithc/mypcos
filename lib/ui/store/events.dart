@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:roo_mobile/ui/components/bottom_sheet.dart';
 import 'package:roo_mobile/ui/components/chat.dart';
 import 'package:roo_mobile/ui/store/detail.dart';
+import 'package:roo_mobile/utils/constants.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -33,71 +34,40 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: const Color.fromARGB(255, 253, 252, 255),
       body: Column(
         children: [
-          SizedBox(height: MediaQuery.of(context).padding.top + 20),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: kDefaultPaddin),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.greenAccent.shade100, Colors.white],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+            child: Column(
               children: [
-                Text(
-                  categories[selectedIndex],
-                  style: GoogleFonts.sriracha(
-                    // ✅ Apply Rock Salt font
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.black,
+                SizedBox(height: MediaQuery.of(context).padding.top + 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: kDefaultPaddin,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        categories[selectedIndex],
+                        style: largeText(fontWeight: FontWeight.bold),
+                      ),
+                    ],
                   ),
                 ),
-                GestureDetector(
-                  onTap: () {
-                    // Show the dialog containing the chatPage
-                    showChatBottomSheet(context);
-                    // ✅ Switch to ChatHomePage within the same tab
-                    /*
-                    (context.findAncestorStateOfType<MyHomePageState>())
-                        ?.setState(() {
-                          (context.findAncestorStateOfType<MyHomePageState>())
-                              ?.showChatHome = false;
-                          (context.findAncestorStateOfType<MyHomePageState>())
-                              ?.selectedIndex = 2;
-                        });
-
-                        */
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(
-                            0.5,
-                          ), // ✅ Grey shadow with transparency
-                          spreadRadius: 1,
-                          blurRadius: 6,
-                          offset: Offset(
-                            0,
-                            3,
-                          ), // Shadow position (horizontal, vertical)
-                        ),
-                      ],
-                    ),
-                    child: CircleAvatar(
-                      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-                      child: Icon(
-                        Icons.auto_awesome,
-                        color: const Color.fromARGB(255, 106, 0, 255),
-                      ),
-                    ),
-                  ),
+                Categories(
+                  categories: categories,
+                  selectedIndex: selectedIndex,
+                  onCategorySelected: updateCategory,
                 ),
               ],
             ),
           ),
-          Categories(
-            categories: categories,
-            selectedIndex: selectedIndex,
-            onCategorySelected: updateCategory,
-          ),
+
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: kDefaultPaddin),
@@ -149,43 +119,42 @@ class Categories extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: kDefaultPaddin),
-      child: SizedBox(
-        height: 25,
-        child: ListView.builder(
-          scrollDirection: Axis.horizontal,
-          itemCount: categories.length,
-          itemBuilder: (context, index) => buildCategory(index),
-        ),
-      ),
-    );
-  }
-
-  Widget buildCategory(int index) {
-    return GestureDetector(
-      onTap: () => onCategorySelected(index),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: kDefaultPaddin),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              categories[index],
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color:
-                    selectedIndex == index
-                        ? Colors.black
-                        : Colors.deepPurpleAccent.shade200,
-              ),
-            ),
-            Container(
-              margin: const EdgeInsets.only(top: kDefaultPaddin / 8),
-              height: 2,
-              width: 30,
-              color: selectedIndex == index ? Colors.black : Colors.transparent,
-            ),
-          ],
-        ),
+      child: Row(
+        mainAxisAlignment:
+            MainAxisAlignment.spaceEvenly, // 👈 evenly space categories
+        children:
+            categories.asMap().entries.map((entry) {
+              final index = entry.key;
+              final category = entry.value;
+              return Expanded(
+                // 👈 spread each category evenly
+                child: GestureDetector(
+                  onTap: () => onCategorySelected(index),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        category,
+                        textAlign: TextAlign.center,
+                        style:
+                            selectedIndex == index
+                                ? smallText(fontWeight: FontWeight.bold)
+                                : smallText(),
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        height: 2,
+                        width: 30,
+                        color:
+                            selectedIndex == index
+                                ? Colors.black
+                                : Colors.transparent,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
       ),
     );
   }
@@ -212,6 +181,46 @@ class Product {
 
 List<Product> products = [
   // Foods
+  Product(
+    id: 1,
+    title: "Apple",
+    price: 100,
+    size: 1,
+    description: "A healthy fruit",
+    image: "assets/img/profile_pic.png",
+    color: Colors.deepPurpleAccent,
+    category: "Foods",
+  ),
+  Product(
+    id: 2,
+    title: "Banana",
+    price: 50,
+    size: 1,
+    description: "High in potassium",
+    image: "assets/img/profile_pic.png",
+    color: Colors.purpleAccent,
+    category: "Foods",
+  ),
+  Product(
+    id: 3,
+    title: "Broccoli",
+    price: 80,
+    size: 1,
+    description: "Rich in vitamins",
+    image: "assets/img/profile_pic.png",
+    color: Colors.deepPurple,
+    category: "Foods",
+  ),
+  Product(
+    id: 4,
+    title: "Carrot",
+    price: 60,
+    size: 1,
+    description: "Good for vision",
+    image: "assets/img/profile_pic.png",
+    color: Colors.indigoAccent,
+    category: "Foods",
+  ),
   Product(
     id: 1,
     title: "Apple",
@@ -397,8 +406,8 @@ class ItemCard extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(kDefaultPaddin),
               decoration: BoxDecoration(
-                color: product.color,
-                borderRadius: BorderRadius.circular(32),
+                color: Colors.greenAccent.shade100,
+                borderRadius: BorderRadius.circular(18),
               ),
               child: Hero(
                 tag: "${product.id}",

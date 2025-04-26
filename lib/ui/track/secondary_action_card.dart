@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:roo_mobile/ui/components/bottom_sheet.dart';
-import 'package:roo_mobile/ui/track/components/period/period_calendar.dart';
+import 'package:roo_mobile/utils/constants.dart';
 
 class SecondaryActionCard extends StatelessWidget {
   const SecondaryActionCard({
     super.key,
     required this.title,
-    this.subtitle,
-    this.iconsSrc = "assets/img/google.png",
+    required this.subtitle,
+    required this.icon,
     this.colorl = const Color(0xFF7553F6),
     this.trailingIcon,
-    this.onTapCallback, // 👈 add this
+    this.onTapCallback,
   });
 
-  final String title, iconsSrc;
+  final Widget title; // Now a Widget, not a String
+  final Widget subtitle; // Now a Widget, not a String
+  final Icon icon;
   final Color colorl;
-  final Widget? trailingIcon; // New optional icon widget
-  final VoidCallback? onTapCallback; // 👈 declare callback
-  final String? subtitle;
+  final Widget? trailingIcon;
+  final VoidCallback? onTapCallback;
 
   @override
   Widget build(BuildContext context) {
@@ -27,51 +27,43 @@ class SecondaryActionCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTapCallback,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: screenHeight * 0.02),
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: screenWidth * 0.05,
-            vertical: screenWidth * 0.04,
-          ),
-          decoration: BoxDecoration(
-            color: colorl,
-            borderRadius: BorderRadius.all(Radius.circular(screenWidth * 0.04)),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                        color:
-                            colorl == Colors.white
-                                ? Colors.deepPurpleAccent
-                                : Colors.black87,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      this.subtitle ?? "Watch video - 15 mins",
-                      style: TextStyle(
-                        color:
-                            colorl == Colors.white
-                                ? Colors.deepPurple
-                                : Colors.black54,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
+      child: Container(
+        margin: EdgeInsets.symmetric(
+          horizontal: screenWidth * 0.03,
+          vertical: screenHeight * 0.01,
+        ),
+        padding: EdgeInsets.symmetric(
+          horizontal: screenWidth * 0.05,
+          vertical: screenWidth * 0.04,
+        ),
+        decoration: BoxDecoration(
+          color: colorl,
+          borderRadius: BorderRadius.all(Radius.circular(screenWidth * 0.04)),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  title, // directly placing widget
+                  const SizedBox(height: 4),
+                  subtitle, // directly placing widget
+                ],
               ),
-              const SizedBox(width: 12),
-              trailingIcon!,
-            ],
-          ),
+            ),
+            const SizedBox(width: 12),
+
+            Container(
+              height: 36,
+              width: 36,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10), // Less round now
+              ),
+              child: icon,
+            ),
+          ],
         ),
       ),
     );
@@ -79,16 +71,17 @@ class SecondaryActionCard extends StatelessWidget {
 }
 
 class FileItemCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final String imageUrl;
+  final Widget titleWidget;
+  final Widget subtitleWidget;
+  final String
+  imageUrl; // Currently unused, but keeping it if you plan to show image later
   final VoidCallback onTap;
   final VoidCallback onEdit;
 
   const FileItemCard({
     Key? key,
-    required this.title,
-    required this.subtitle,
+    required this.titleWidget,
+    required this.subtitleWidget,
     required this.imageUrl,
     required this.onTap,
     required this.onEdit,
@@ -98,6 +91,7 @@ class FileItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
+
     return GestureDetector(
       onTap: onTap,
       child: Padding(
@@ -105,53 +99,44 @@ class FileItemCard extends StatelessWidget {
           horizontal: screenHeight * 0.02,
           vertical: screenHeight * 0.01,
         ),
-
         child: Container(
           padding: EdgeInsets.symmetric(
             horizontal: screenWidth * 0.05,
             vertical: screenWidth * 0.04,
           ),
           decoration: BoxDecoration(
-            color: Colors.greenAccent.shade200,
+            color: tertiaryColor,
             borderRadius: BorderRadius.circular(16),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(Icons.picture_as_pdf, size: 32),
-              SizedBox(width: 12),
+              Icon(Icons.book_outlined, size: 32, color: titleColor),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      maxLines: 2, // Allow up to 2 lines
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: Colors.black54),
-                    ),
+                    titleWidget,
+                    const SizedBox(height: 4),
+                    subtitleWidget,
                   ],
                 ),
               ),
-              SizedBox(width: 12),
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: Colors.white,
+              const SizedBox(width: 12),
+              Container(
+                height: 36,
+                width: 36,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10), // Less round now
+                ),
                 child: IconButton(
                   onPressed: onEdit,
-                  icon: Icon(Icons.edit, size: 18, color: Colors.deepPurple),
+                  icon: Icon(Icons.edit, size: 18, color: iconColor),
                   tooltip: 'Edit file name',
                   padding: EdgeInsets.zero,
-                  constraints: BoxConstraints(),
+                  constraints: const BoxConstraints(),
                   splashRadius: 20,
                 ),
               ),

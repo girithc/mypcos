@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:roo_mobile/main.dart';
-import 'package:roo_mobile/ui/track/components/period/period_symptoms.dart';
+import 'package:roo_mobile/ui/track/health/period/period_symptoms.dart';
 import 'package:roo_mobile/utils/constants.dart';
 import 'package:simple_animated_button/elevated_layer_button.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -65,10 +65,23 @@ class _PeriodCalendarSheetContentState
   // 1. Add state variable
   bool _showingSymptomsInput = false;
   int _selectedPeriodId = 0;
-  void _toggleSymptomsInput(bool value) {
-    setState(() {
-      _showingSymptomsInput = value;
-    });
+  void _toggleSymptomsInput(bool value) async {
+    if (!value) {
+      // Symptoms flow done, reload state
+      setState(() {
+        _showingSymptomsInput = false;
+        _userSelectedDates.clear(); // ✅ clear selected
+        _rangeStart = null;
+        _rangeEnd = null;
+        _isLoading = true;
+      });
+
+      await _fetchLast4MonthsPeriods(); // ✅ refresh calendar
+    } else {
+      setState(() {
+        _showingSymptomsInput = true;
+      });
+    }
   }
 
   Future<void> _sendFullMonthPeriodData() async {
@@ -91,8 +104,10 @@ class _PeriodCalendarSheetContentState
     }
 
     // Step 1: Sort the dates
-    List<DateTime> sortedDates = List.from(_periodDates)..sort();
+    final datesToUse =
+        _userSelectedDates.isNotEmpty ? _userSelectedDates : _prepopulatedDates;
 
+    List<DateTime> sortedDates = List.from(datesToUse)..sort();
     // Step 2: Group dates into contiguous periods
     List<List<DateTime>> contiguousPeriods = [];
     List<DateTime> currentGroup = [];
@@ -212,7 +227,7 @@ class _PeriodCalendarSheetContentState
         body: jsonEncode({'firebase_token': token}),
       );
 
-      print("Response: ${resp.body}");
+      //print("Response: ${resp.body}");
 
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body) as Map<String, dynamic>;
@@ -256,7 +271,8 @@ class _PeriodCalendarSheetContentState
 
     final user = FirebaseAuth.instance.currentUser;
     final token = await user?.getIdToken();
-    // 1. Show confirmation dialog
+
+    // 1. Confirmation dialog
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder:
@@ -288,15 +304,21 @@ class _PeriodCalendarSheetContentState
     );
 
     if (confirmed != true) {
-      // User chose No or dismissed dialog.
       print('User canceled the reset.');
       return;
     }
 
+    // 2. Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
     try {
-      // 2. Send POST request
+      // 3. Send POST request
       final response = await http.post(
-        Uri.parse('${EnvConfig.baseUrl}/period-calendar-reset'),
+        Uri.parse('${EnvConfig.baseUrl2}/period-calendar-reset'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'firebase_token': token,
@@ -305,25 +327,31 @@ class _PeriodCalendarSheetContentState
         }),
       );
 
-      print("Response: ${response.body}");
+      Navigator.of(context).pop(); // Close the loading dialog
+
+      //print("Response: ${response.body}");
 
       if (response.statusCode == 200) {
-        // 3. On success, clear the dates and update UI
         setState(() {
           _userSelectedDates.removeWhere(
-            (date) => date.year == year && date.month == month,
+            (d) => d.year == year && d.month == month,
           );
+          _prepopulatedDates.removeWhere(
+            (d) => d.year == year && d.month == month,
+          );
+          _periodDates.removeWhere((d) => d.year == year && d.month == month);
           _rangeStart = null;
           _rangeEnd = null;
         });
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Current month has been reset.')),
         );
       } else {
-        throw Exception('Server responded ${response.statusCode}');
+        throw Exception('Server responded with ${response.statusCode}');
       }
     } catch (e) {
-      // 4. On error, show a message
+      Navigator.of(context).pop(); // Ensure the loader is closed on error
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Failed to reset month: $e')));
@@ -478,7 +506,7 @@ class _PeriodCalendarSheetContentState
                             icon: Icon(Icons.refresh, size: 22),
                             label: Text(
                               "Reset This Month",
-                              style: TextStyle(fontSize: 18),
+                              style: mediumText(color: Colors.white),
                             ),
                             style: ElevatedButton.styleFrom(
                               foregroundColor: Colors.white,

@@ -9,8 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:roo_mobile/ui/track/action_card.dart';
-import 'package:roo_mobile/ui/track/components/medical/upload_report.dart';
-import 'package:roo_mobile/ui/track/components/period/period_calendar.dart';
+import 'package:roo_mobile/ui/track/health/main.dart';
 import 'package:roo_mobile/ui/track/secondary_action_card.dart';
 import 'package:roo_mobile/utils/constants.dart';
 import 'package:shimmer/shimmer.dart';
@@ -65,6 +64,7 @@ class _FilePageState extends State<FilePage> {
       final publicUrl = supabase.storage.from('images').getPublicUrl(fileName);
       print('✅ Supabase Upload Successful: $publicUrl');
 
+      if (!mounted) return;
       setState(() {
         uploadedFileUrl = publicUrl;
       });
@@ -122,6 +122,7 @@ class _FilePageState extends State<FilePage> {
 
     final fetchedDocs = await getDocuments();
 
+    if (!mounted) return;
     setState(() {
       docs = fetchedDocs;
       isFetchingDocuments = false;
@@ -155,8 +156,8 @@ class _FilePageState extends State<FilePage> {
           rawWrapper[1] is List) {
         final rawDocs = rawWrapper[1];
         final safeDocs = rawDocs.whereType<Map<String, dynamic>>().toList();
-        print("📄 Received ${safeDocs.length} safe documents");
-        print("objects: $safeDocs");
+        //print("📄 Received ${safeDocs.length} safe documents");
+        //print("objects: $safeDocs");
         return safeDocs;
       } else {
         print("⚠️ Invalid document wrapper format.");
@@ -289,11 +290,31 @@ class _FilePageState extends State<FilePage> {
             children: [
               Padding(
                 padding: EdgeInsets.only(left: screenHeight * 0.018),
-                child: ActionCard(title: "Body (to do)"),
+                child: ActionCard(
+                  title: "Body Data",
+                  titleWidget: Text("Body Data", style: largeText()),
+                  indicatorWidget: FeelBetterIndicator(
+                    message: "Self-care",
+                    icon1: Icons.woman,
+                    icon2: Icons.cruelty_free_outlined, // or Icons.favorite
+                    backgroundColor: Colors.pink.shade50,
+                    iconColor: Colors.pinkAccent,
+                  ),
+                ),
               ),
               Padding(
                 padding: EdgeInsets.only(left: screenHeight * 0.018),
-                child: ActionCard(title: "Fitness (to do )"),
+                child: ActionCard(
+                  title: "Fitness Data", // TODO: Change to "Fitness Data"
+                  titleWidget: Text("Fitness Data", style: largeText()),
+                  indicatorWidget: FeelBetterIndicator(
+                    message: "Self-care",
+                    icon1: Icons.monitor_heart_rounded,
+                    icon2: Icons.favorite_border, // or Icons.favorite
+                    backgroundColor: Colors.pink.shade50,
+                    iconColor: Colors.pinkAccent,
+                  ),
+                ),
               ),
             ],
           ),
@@ -310,16 +331,15 @@ class _FilePageState extends State<FilePage> {
             children: [
               Text(
                 "Files",
-                style: GoogleFonts.sriracha(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
+                style: largeText(
+                  fontWeight: FontWeight.bold,
                   color: Colors.black,
                 ),
               ),
               DottedBorder(
                 color: Colors.white,
-                strokeWidth: 3,
-                dashPattern: [6, 3],
+                strokeWidth: 2,
+                dashPattern: [4, 1],
                 borderType: BorderType.RRect,
                 radius: Radius.circular(15),
                 child: Container(
@@ -336,18 +356,11 @@ class _FilePageState extends State<FilePage> {
                       await fetchDocuments(); // 👈 Refresh the docs after upload
                     },
                     icon: Icon(
-                      Icons.file_upload,
-                      color: Color.fromARGB(255, 106, 0, 255),
+                      Icons.file_upload_outlined,
+                      color: iconColor,
                       size: 18, // ⬅️ Slightly bigger icon
                     ),
-                    label: Text(
-                      'Upload File',
-                      style: TextStyle(
-                        color: Color.fromARGB(255, 106, 0, 255),
-                        fontSize: 14, // ⬅️ Slightly bigger text
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    label: Text('Upload File', style: smallText()),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       padding: EdgeInsets.symmetric(
@@ -378,16 +391,14 @@ class _FilePageState extends State<FilePage> {
                   (doc['created_at'] as String?)?.split('T').first ?? '';
 
               return FileItemCard(
-                title: filename,
-                subtitle: "Uploaded on $createdAt",
+                titleWidget: Text(filename, style: mediumText()),
+                subtitleWidget: Text(
+                  "$createdAt",
+                  style: smallText(color: textColor),
+                ),
                 imageUrl: url,
                 onTap:
-                    () => showFilePreview(
-                      context,
-                      url,
-                      filename,
-                      "Uploaded on $createdAt",
-                    ),
+                    () => showFilePreview(context, url, filename, "$createdAt"),
                 onEdit: () {
                   showEditFileSheet(
                     doc['id'],

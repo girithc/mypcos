@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:roo_mobile/ui/components/bottom_sheet.dart';
-import 'package:roo_mobile/ui/components/chat.dart';
 import 'package:roo_mobile/ui/track/action_card.dart';
-import 'package:roo_mobile/ui/track/components/period/period_calendar.dart';
 import 'package:roo_mobile/ui/track/diet/main.dart';
 import 'package:roo_mobile/ui/track/data/main.dart';
 import 'package:roo_mobile/ui/track/health/main.dart';
+import 'package:roo_mobile/ui/track/health/pcos/main.dart';
 import 'package:roo_mobile/ui/track/secondary_action_card.dart';
 import 'package:roo_mobile/ui/track/data.dart';
+import 'package:roo_mobile/utils/constants.dart';
 
 class TrackPage extends StatefulWidget {
   const TrackPage({super.key});
@@ -24,30 +24,22 @@ class _TrackPageState extends State<TrackPage> {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
     return Scaffold(
-      backgroundColor: Colors.grey[200],
+      backgroundColor: screenColor,
       appBar: AppBar(
-        backgroundColor: Colors.white, // match Scaffold background if needed
+        backgroundColor: Colors.white,
         elevation: 0,
-        automaticallyImplyLeading: false, // disables default back button
-        title: Text(
-          selectedCategory,
-          style: GoogleFonts.sriracha(
-            fontSize: 32, // Slightly smaller for AppBar
-            fontWeight: FontWeight.w800,
-            color: Colors.black,
-          ),
-        ),
+        automaticallyImplyLeading: false,
+        centerTitle: false, // 👈 ADD THIS LINE!
+        title: Text("MyPCOS", style: largeText(fontWeight: FontWeight.bold)),
         actions: [
-          _circleIcon(context, Icons.calendar_month, showCalendarBottomSheet),
           _circleIcon(
             context,
             null,
             showSettingsBottomSheet,
             imageAsset: 'assets/img/profile_pic.png',
           ),
-          _circleIcon(context, Icons.auto_awesome, showChatBottomSheet),
-          const SizedBox(width: 12), // spacing at end
         ],
       ),
 
@@ -55,27 +47,24 @@ class _TrackPageState extends State<TrackPage> {
         child: Column(
           children: [
             Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: screenHeight * 0.02,
-                vertical: screenHeight * 0.02,
-              ),
+              padding: EdgeInsets.symmetric(vertical: screenHeight * 0.02),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.start,
+                mainAxisAlignment:
+                    MainAxisAlignment.spaceEvenly, // 👈 Evenly distribute tabs
                 children:
-                    ["Period", "Data"].map((category) {
+                    ["Period", "Data", "PCOS"].map((category) {
                       final isSelected = selectedCategory == category;
                       return GestureDetector(
                         onTap:
                             () => setState(() => selectedCategory = category),
                         child: Container(
-                          margin: EdgeInsets.only(right: screenHeight * 0.03),
                           padding: EdgeInsets.symmetric(
                             horizontal: screenHeight * 0.03,
                             vertical: screenHeight * 0.0125,
                           ),
                           decoration: BoxDecoration(
-                            color: isSelected ? Colors.black : Colors.white,
-                            borderRadius: BorderRadius.circular(20),
+                            color: isSelected ? secondaryColor : Colors.white,
+                            borderRadius: BorderRadius.circular(10),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.grey.shade100,
@@ -83,16 +72,7 @@ class _TrackPageState extends State<TrackPage> {
                               ),
                             ],
                           ),
-                          child: Text(
-                            category,
-                            style: TextStyle(
-                              color:
-                                  isSelected
-                                      ? Colors.white
-                                      : Colors.deepPurpleAccent,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                          child: Text(category, style: mediumText()),
                         ),
                       );
                     }).toList(),
@@ -121,6 +101,8 @@ class _TrackPageState extends State<TrackPage> {
     switch (selectedCategory) {
       case "Period":
         return HealthPage();
+      case "PCOS":
+        return PCOSPage();
       case "Diet":
         return DietPage();
       case "Data":
@@ -140,13 +122,8 @@ class _TrackPageState extends State<TrackPage> {
           child: Row(
             children:
                 categoryActions[selectedCategory]!.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final action = entry.value;
-                  final rotatedType = types[index % types.length];
-
                   return Padding(
                     padding: EdgeInsets.only(left: screenHeight * 0.018),
-                    child: ActionCard(title: action.title, type: rotatedType),
                   );
                 }).toList(),
           ),
@@ -155,14 +132,7 @@ class _TrackPageState extends State<TrackPage> {
         // Secondary Actions
         Padding(
           padding: EdgeInsets.all(screenHeight * 0.03),
-          child: Text(
-            "Actions",
-            style: GoogleFonts.sriracha(
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-              color: Colors.black,
-            ),
-          ),
+          child: Text("Actions", style: largeText()),
         ),
 
         ...secondaryCategoryActions[selectedCategory]!.map(
@@ -172,8 +142,9 @@ class _TrackPageState extends State<TrackPage> {
               vertical: screenHeight * 0.015,
             ),
             child: SecondaryActionCard(
-              title: action.title,
-              iconsSrc: action.iconSrc,
+              title: Text(action.title, style: mediumText()),
+              subtitle: Text("subtitle", style: smallText()),
+              icon: Icon(Icons.calendar_today),
               colorl: action.color,
               trailingIcon: action.icon,
               onTapCallback:
@@ -214,7 +185,7 @@ class _TrackPageState extends State<TrackPage> {
                       fit: BoxFit.cover,
                     ),
                   )
-                  : Icon(icon, color: Colors.deepPurpleAccent),
+                  : Icon(icon, color: Colors.pinkAccent.shade200),
         ),
       ),
     );

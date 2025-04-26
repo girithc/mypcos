@@ -11,184 +11,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:roo_mobile/ui/components/chat.dart';
-import 'package:roo_mobile/ui/track/components/period/period_calendar.dart';
+import 'package:roo_mobile/ui/track/health/period/period_calendar.dart';
 import 'package:roo_mobile/ui/components/settings.dart';
 import 'package:roo_mobile/utils/constants.dart';
-
-void showDietaryPreferencesBottomSheet(BuildContext context) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    builder: (BuildContext context) {
-      return DietaryPreferencesContent();
-    },
-  );
-}
-
-class DietaryPreferencesContent extends StatefulWidget {
-  @override
-  _DietaryPreferencesContentState createState() =>
-      _DietaryPreferencesContentState();
-}
-
-class _DietaryPreferencesContentState extends State<DietaryPreferencesContent> {
-  // Define the dietary preferences and their initial states
-  Map<String, bool> preferences = {
-    'Gluten-Free': false,
-    'Vegetarian': false,
-    'Dairy-Free': false,
-    'Nut-Free': false,
-    'Vegan': false,
-  };
-
-  // List of PCOS-friendly foods
-  final List<String> pcosFriendlyFoods = [
-    'Avocado',
-    'Berries',
-    'Leafy Greens',
-    'Salmon',
-    'Chia Seeds',
-    'Flaxseeds',
-    'Nuts',
-    'Eggs',
-    'Quinoa',
-    'Lentils',
-    'Turmeric',
-    'Cinnamon',
-    'Sweet Potatoes',
-    'Zucchini',
-    'Broccoli',
-  ];
-
-  Set<String> selectedFoods = {}; // Store selected chips
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      padding: EdgeInsets.all(16),
-      height: MediaQuery.of(context).size.height * 0.6,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Dietary Preferences',
-                style: GoogleFonts.sriracha(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: const Color.fromARGB(255, 106, 0, 255),
-                ),
-              ),
-              IconButton(
-                icon: Icon(Icons.close, color: Colors.deepPurple),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-            ],
-          ),
-          SizedBox(height: 10),
-          // Preferences List
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Preferences List
-                  Column(
-                    children:
-                        preferences.keys.map((String key) {
-                          return SwitchListTile(
-                            inactiveTrackColor: Colors.white,
-                            inactiveThumbColor: Colors.black,
-                            activeTrackColor: Color.fromARGB(255, 106, 0, 255),
-                            activeColor: Colors.white,
-                            title: Text(
-                              key,
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.black,
-                              ),
-                            ),
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 10,
-                            ),
-                            value: preferences[key]!,
-                            onChanged: (bool value) {
-                              setState(() {
-                                preferences[key] = value;
-                              });
-                            },
-                          );
-                        }).toList(),
-                  ),
-
-                  SizedBox(height: 20),
-
-                  // Chips for PCOS-friendly foods
-                  Wrap(
-                    spacing: 2,
-                    runSpacing: 2,
-                    children:
-                        pcosFriendlyFoods.map((food) {
-                          return ChoiceChip(
-                            label: Text(
-                              food,
-                              style: TextStyle(
-                                fontSize: 18,
-                                color:
-                                    selectedFoods.contains(food)
-                                        ? Colors.white
-                                        : Colors
-                                            .black, // Change text color dynamically
-                              ),
-                            ),
-                            selected: selectedFoods.contains(food),
-                            selectedColor: Color.fromARGB(
-                              255,
-                              106,
-                              0,
-                              255,
-                            ), // Purple when selected
-                            backgroundColor:
-                                Colors.grey[50], // Light grey when unselected
-                            checkmarkColor:
-                                Colors.white, // White tick mark when selected
-                            onSelected: (bool selected) {
-                              setState(() {
-                                if (selected) {
-                                  selectedFoods.add(food);
-                                } else {
-                                  selectedFoods.remove(food);
-                                }
-                              });
-                            },
-                          );
-                        }).toList(),
-                  ),
-
-                  SizedBox(height: 20),
-
-                  // Save Button
-                ],
-              ),
-            ),
-          ),
-          // Save Button
-        ],
-      ),
-    );
-  }
-}
 
 void showCalendarBottomSheet(BuildContext context) {
   showModalBottomSheet(
@@ -444,11 +269,13 @@ class _MoodTrackerSheetContentState extends State<MoodTrackerSheetContent> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
     return Container(
       // Gradient background with rounded top corners.
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Colors.pink.shade100, Colors.purple.shade100],
+          colors: [Colors.grey.shade100, Colors.purple.shade100],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -456,26 +283,37 @@ class _MoodTrackerSheetContentState extends State<MoodTrackerSheetContent> {
       ),
       child: ListView(
         controller: widget.scrollController,
-        padding: const EdgeInsets.all(20),
         children: [
           // Small handle at the top.
-          Center(
-            child: Container(
-              width: 50,
-              height: 5,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade400,
-                borderRadius: BorderRadius.circular(10),
-              ),
+          Container(
+            margin: EdgeInsets.only(
+              top: screenHeight * 0.02,
+              left: screenWidth * 0.05,
+              right: screenWidth * 0.05,
+            ),
+            padding: EdgeInsets.symmetric(
+              vertical: screenHeight * 0.01,
+              horizontal: screenWidth * 0.05,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.all(Radius.circular(10)),
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: Icon(Icons.close, size: 28),
+                  ),
+                ),
+                Center(child: Text("How Do You Feel ?", style: largeText())),
+              ],
             ),
           ),
-          const SizedBox(height: 20),
-          const Center(
-            child: Text(
-              "How's Your Moooood?",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-          ),
+
           const SizedBox(height: 20),
           // Wrap the mood options in a responsive layout.
           Wrap(
@@ -540,22 +378,34 @@ class _MoodTrackerSheetContentState extends State<MoodTrackerSheetContent> {
                 }).toList(),
           ),
           const SizedBox(height: 30),
-          ElevatedButton(
-            onPressed: () {
-              debugPrint('Moods selected: ${selectedMoods.toList()}');
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.pinkAccent,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
+          Container(
+            margin: EdgeInsets.symmetric(
+              horizontal: screenWidth * 0.05,
+              vertical: screenHeight * 0.015,
+            ),
+            child: ElevatedButton(
+              onPressed: () {
+                // Save preferences action
+                Navigator.of(context).pop();
+              },
+              style: ElevatedButton.styleFrom(
+                elevation: 0,
+                backgroundColor: Colors.pinkAccent.shade200,
+                padding: EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: Text(
+                'Coming Soon',
+                style: mediumText(
+                  color: Colors.white,
+                  fontWeight: FontWeight.normal,
+                ),
               ),
             ),
-            child: const Center(
-              child: Text("Save Mood", style: TextStyle(fontSize: 18)),
-            ),
           ),
+
           const SizedBox(height: 20),
         ],
       ),
