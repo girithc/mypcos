@@ -209,8 +209,8 @@ class _ChatPageState extends State<ChatPage> {
         body: body,
       );
 
-      print(response.statusCode);
-      print(response.body);
+      //print(response.statusCode);
+      //print(response.body);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -257,7 +257,7 @@ class _ChatPageState extends State<ChatPage> {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'firebase_token': firebaseToken}),
       );
-      print("Response: ${response.body}");
+      //print("Response: ${response.body}");
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:roo_mobile/ui/store/events.dart';
+import 'package:roo_mobile/utils/constants.dart';
 
 class DetailsScreen extends StatelessWidget {
   const DetailsScreen({super.key, required this.product});
@@ -11,21 +12,21 @@ class DetailsScreen extends StatelessWidget {
     final Size size = MediaQuery.of(context).size;
     return Scaffold(
       // each product have a color
-      backgroundColor: product.color,
+      backgroundColor: Colors.greenAccent.shade100,
       appBar: AppBar(
-        backgroundColor: product.color,
+        backgroundColor: Colors.greenAccent.shade100,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_outlined, color: Colors.white),
+          icon: Icon(Icons.arrow_back_ios_new_outlined, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
         actions: <Widget>[
           IconButton(
-            icon: Icon(Icons.search, color: Colors.white),
+            icon: Icon(Icons.search, color: Colors.black),
             onPressed: () {},
           ),
           IconButton(
-            icon: Icon(Icons.shopping_bag, color: Colors.white),
+            icon: Icon(Icons.shopping_bag, color: Colors.black),
             onPressed: () {},
           ),
           const SizedBox(width: kDefaultPaddin / 2),
@@ -55,12 +56,7 @@ class DetailsScreen extends StatelessWidget {
                     ),
                     child: Column(
                       children: <Widget>[
-                        ColorAndSize(product: product),
-                        const SizedBox(height: kDefaultPaddin / 2),
-                        Description(product: product),
-                        //const SizedBox(height: kDefaultPaddin / 2),
-                        //const CounterWithFavBtn(),
-                        const SizedBox(height: kDefaultPaddin / 2),
+                        const SizedBox(height: kDefaultPaddin * 4),
                         AddToCart(product: product),
                       ],
                     ),
@@ -86,31 +82,22 @@ class AddToCart extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: kDefaultPaddin),
       child: Row(
         children: <Widget>[
-          Container(
-            margin: const EdgeInsets.only(right: kDefaultPaddin),
-            height: 50,
-            width: 58,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: product.color),
-            ),
-            child: IconButton(icon: Icon(Icons.add_to_drive), onPressed: () {}),
-          ),
           Expanded(
             child: ElevatedButton(
               onPressed: () {},
               style: ElevatedButton.styleFrom(
+                elevation: 0,
                 minimumSize: const Size(double.infinity, 48),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                backgroundColor: product.color,
+                backgroundColor: Colors.greenAccent.shade100,
               ),
               child: Text(
-                "Buy  Now".toUpperCase(),
-                style: const TextStyle(
+                "Buy Now".toUpperCase(),
+                style: smallText(
+                  color: Colors.black,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
                 ),
               ),
             ),
@@ -219,30 +206,19 @@ class ProductTitleWithImage extends StatelessWidget {
         children: <Widget>[
           const Text(
             "Aristocratic Hand Bag",
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(color: Colors.black),
           ),
-          Text(
-            product.title,
-            style: Theme.of(context).textTheme.titleLarge!.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          Text(product.title, style: mediumText(fontWeight: FontWeight.w800)),
           const SizedBox(height: kDefaultPaddin),
           Row(
             children: <Widget>[
               RichText(
                 text: TextSpan(
                   children: [
-                    const TextSpan(text: "Price\n"),
+                    TextSpan(text: "Price\n", style: smallText()),
                     TextSpan(
                       text: "\$${product.price}",
-                      style: Theme.of(
-                        context,
-                      ).textTheme.headlineSmall!.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: mediumText(fontWeight: FontWeight.w800),
                     ),
                   ],
                 ),

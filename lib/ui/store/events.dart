@@ -222,7 +222,7 @@ List<Product> products = [
     category: "Foods",
   ),
   Product(
-    id: 1,
+    id: 5,
     title: "Apple",
     price: 100,
     size: 1,
@@ -232,7 +232,7 @@ List<Product> products = [
     category: "Foods",
   ),
   Product(
-    id: 2,
+    id: 6,
     title: "Banana",
     price: 50,
     size: 1,
@@ -242,7 +242,7 @@ List<Product> products = [
     category: "Foods",
   ),
   Product(
-    id: 3,
+    id: 7,
     title: "Broccoli",
     price: 80,
     size: 1,
@@ -252,7 +252,7 @@ List<Product> products = [
     category: "Foods",
   ),
   Product(
-    id: 4,
+    id: 8,
     title: "Carrot",
     price: 60,
     size: 1,
@@ -264,7 +264,7 @@ List<Product> products = [
 
   // Supplements
   Product(
-    id: 5,
+    id: 9,
     title: "Protein Shake",
     price: 200,
     size: 2,
