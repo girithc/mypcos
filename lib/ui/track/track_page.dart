@@ -40,6 +40,7 @@ class _TrackPageState extends State<TrackPage> {
             showSettingsBottomSheet,
             imageAsset: 'assets/img/profile_pic.png',
           ),
+          SizedBox(width: screenWidth * 0.01),
         ],
       ),
 

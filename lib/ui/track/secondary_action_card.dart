@@ -27,43 +27,45 @@ class SecondaryActionCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTapCallback,
-      child: Container(
-        margin: EdgeInsets.symmetric(
-          horizontal: screenWidth * 0.03,
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: screenHeight * 0.02,
           vertical: screenHeight * 0.01,
         ),
-        padding: EdgeInsets.symmetric(
-          horizontal: screenWidth * 0.05,
-          vertical: screenWidth * 0.04,
-        ),
-        decoration: BoxDecoration(
-          color: colorl,
-          borderRadius: BorderRadius.all(Radius.circular(screenWidth * 0.04)),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  title, // directly placing widget
-                  const SizedBox(height: 4),
-                  subtitle, // directly placing widget
-                ],
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: screenWidth * 0.05,
+            vertical: screenWidth * 0.04,
+          ),
+          decoration: BoxDecoration(
+            color: colorl,
+            borderRadius: BorderRadius.all(Radius.circular(screenWidth * 0.04)),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    title, // directly placing widget
+                    const SizedBox(height: 4),
+                    subtitle, // directly placing widget
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
+              const SizedBox(width: 12),
 
-            Container(
-              height: 36,
-              width: 36,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10), // Less round now
+              Container(
+                height: 36,
+                width: 36,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10), // Less round now
+                ),
+                child: icon,
               ),
-              child: icon,
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

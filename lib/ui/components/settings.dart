@@ -12,7 +12,7 @@ import 'package:roo_mobile/utils/constants.dart';
 class SettingsPageContent extends StatefulWidget {
   final ScrollController scrollController;
 
-  SettingsPageContent({Key? key, required this.scrollController})
+  const SettingsPageContent({Key? key, required this.scrollController})
     : super(key: key);
 
   @override
@@ -21,17 +21,15 @@ class SettingsPageContent extends StatefulWidget {
 
 class _SettingsPageContentState extends State<SettingsPageContent> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-
   final _secureStorage = const FlutterSecureStorage();
 
   Future<void> _signOut(BuildContext context) async {
     await _auth.signOut();
-    await _secureStorage.deleteAll(); // Delete everything from secure storage
-
+    await _secureStorage.deleteAll();
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (context) => LoginPage()),
-      (Route<dynamic> route) => false, // Remove all routes from stack
+      (Route<dynamic> route) => false,
     );
   }
 
@@ -42,26 +40,16 @@ class _SettingsPageContentState extends State<SettingsPageContent> {
         print("No user is signed in.");
         return;
       }
-      // Get the Firebase token.
       final firebaseToken = await currentUser.getIdToken();
       final email = currentUser.email;
-      // Replace the URL with your actual backend endpoint.
       final Uri url = Uri.parse("${EnvConfig.baseUrl}/users/me");
 
-      // Build the request body.
-      final Map<String, dynamic> requestBody = {
-        'firebase_token': firebaseToken,
-        'email': email,
-      };
-
-      // Send the POST request.
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(requestBody),
+        body: jsonEncode({'firebase_token': firebaseToken, 'email': email}),
       );
 
-      // Print the response to the console.
       print("Response from /users/me: ${response.body}");
     } catch (e) {
       print("Error fetching user details: $e");
@@ -71,12 +59,12 @@ class _SettingsPageContentState extends State<SettingsPageContent> {
   @override
   void initState() {
     super.initState();
-    _fetchUserDetails(); // Fetch user details when the widget is initialized
+    _fetchUserDetails();
   }
 
   @override
   Widget build(BuildContext context) {
-    final userEmail = _auth.currentUser?.email ?? "No email found";
+    final userEmail = _auth.currentUser?.email ?? "";
 
     return Container(
       padding: const EdgeInsets.all(10),
@@ -114,7 +102,8 @@ class _SettingsPageContentState extends State<SettingsPageContent> {
                     ),
                     cardColor: Colors.grey.shade100,
                     cardRadius: 12.0,
-                    backgroundMotifColor: Colors.deepPurpleAccent.shade100,
+                    backgroundMotifColor:
+                        Colors.greenAccent.shade200, // ✅ CHANGED
                     onTap: () => print("User card tapped"),
                     userName: userEmail,
                     userNameStyle: const TextStyle(
@@ -127,55 +116,17 @@ class _SettingsPageContentState extends State<SettingsPageContent> {
                 ),
                 SettingsGroup(
                   dividerStyle: Divider(
-                    color: Colors.deepPurpleAccent.withOpacity(
+                    color: Colors.greenAccent.shade200.withOpacity(
                       0.3,
-                    ), // Custom divider color
-                    thickness: 1.0, // Custom divider thickness
+                    ), // ✅ CHANGED
+                    thickness: 1.0,
                   ),
                   items: [
-                    SettingsItem(
-                      onTap: () {},
-                      icons: CupertinoIcons.pencil_outline,
-                      iconStyle: IconStyle(
-                        iconsColor: Colors.white,
-                        withBackground: true,
-                        backgroundColor: Colors.deepPurpleAccent,
-                      ),
-                      title: 'Appearance',
-                      subtitle: "Customize your experience",
-                    ),
-                    SettingsItem(
-                      onTap: () {},
-                      icons: Icons.person,
-                      iconStyle: IconStyle(
-                        iconsColor: Colors.white,
-                        withBackground: true,
-                        backgroundColor: Colors.deepPurpleAccent,
-                      ),
-                      title: 'Profile',
-                      subtitle: "Learn more about this app",
-                    ),
-                    SettingsItem(
-                      onTap: () {},
-                      icons: Icons.dark_mode_rounded,
-                      iconStyle: IconStyle(
-                        iconsColor: Colors.deepPurpleAccent,
-                        withBackground: true,
-                        backgroundColor: Colors.white,
-                      ),
-                      title: 'Dark Mode',
-                      subtitle: "Enable or disable dark mode",
-                      trailing: Switch.adaptive(
-                        value: false,
-                        onChanged: (value) {},
-                      ),
-                    ),
-
                     SettingsItem(
                       onTap: () => _signOut(context),
                       icons: Icons.logout,
                       iconStyle: IconStyle(
-                        iconsColor: Colors.deepPurpleAccent,
+                        iconsColor: Colors.greenAccent.shade200, // ✅ CHANGED
                         withBackground: true,
                         backgroundColor: Colors.white,
                       ),

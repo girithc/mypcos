@@ -203,7 +203,7 @@ void showSettingsBottomSheet(BuildContext context) {
       return DraggableScrollableSheet(
         initialChildSize: 0.5, // Start at 50% of screen height
         minChildSize: 0.4, // Minimum height of 25% of screen
-        maxChildSize: 0.9, // Maximum height of 75% of screen
+        maxChildSize: 0.5, // Maximum height of 75% of screen
         expand: false, // Prevents full-screen expansion
         builder: (BuildContext context, ScrollController scrollController) {
           return SettingsPageContent(scrollController: scrollController);
