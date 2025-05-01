@@ -77,7 +77,7 @@ class _FilePageState extends State<FilePage> {
 
       final firebaseToken = await user.getIdToken();
 
-      final uri = Uri.parse('${EnvConfig.baseUrl}/upload-document');
+      final uri = Uri.parse('${EnvConfig.baseUrl}/documents/upload-document');
 
       final response = await http.post(
         uri,
@@ -177,7 +177,7 @@ class _FilePageState extends State<FilePage> {
     }
 
     final firebaseToken = await user.getIdToken();
-    final uri = Uri.parse('${EnvConfig.baseUrl}/edit-document-name');
+    final uri = Uri.parse('${EnvConfig.baseUrl}/documents/edit-document-name');
 
     // Show loading
     showDialog(
@@ -240,7 +240,7 @@ class _FilePageState extends State<FilePage> {
     }
 
     final firebaseToken = await user.getIdToken();
-    final uri = Uri.parse('${EnvConfig.baseUrl}/delete-document');
+    final uri = Uri.parse('${EnvConfig.baseUrl}/documents/delete-document');
 
     // Show loading
     showDialog(

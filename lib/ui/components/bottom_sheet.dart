@@ -5,6 +5,8 @@ import 'dart:io';
 import 'package:calendar_timeline/calendar_timeline.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -14,6 +16,7 @@ import 'package:roo_mobile/ui/components/chat.dart';
 import 'package:roo_mobile/ui/track/health/period/period_calendar.dart';
 import 'package:roo_mobile/ui/components/settings.dart';
 import 'package:roo_mobile/utils/constants.dart';
+import 'package:shimmer/shimmer.dart';
 
 void showCalendarBottomSheet(BuildContext context) {
   showModalBottomSheet(
@@ -240,7 +243,6 @@ void showMoodTrackerBottomSheet(BuildContext context) {
   );
 }
 
-/// The content widget for the Mood Tracker bottom sheet.
 class MoodTrackerSheetContent extends StatefulWidget {
   final ScrollController scrollController;
   const MoodTrackerSheetContent({Key? key, required this.scrollController})
@@ -251,10 +253,9 @@ class MoodTrackerSheetContent extends StatefulWidget {
       _MoodTrackerSheetContentState();
 }
 
-class _MoodTrackerSheetContentState extends State<MoodTrackerSheetContent> {
-  // Change from a single selected mood to a set of selected moods.
+class _MoodTrackerSheetContentState extends State<MoodTrackerSheetContent>
+    with SingleTickerProviderStateMixin {
   final Set<String> selectedMoods = {};
-
   final List<Map<String, String>> moods = [
     {"emoji": "😀", "label": "Happy"},
     {"emoji": "😞", "label": "Sad"},
@@ -267,12 +268,195 @@ class _MoodTrackerSheetContentState extends State<MoodTrackerSheetContent> {
     {"emoji": "😕", "label": "Confused"},
   ];
 
+  bool _isLoading = false;
+  bool _isSuccess = false;
+  late final AnimationController _checkmarkController;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkmarkController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+  }
+
+  @override
+  void dispose() {
+    _checkmarkController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _logMoods() async {
+    if (selectedMoods.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select at least one mood.')),
+      );
+      return;
+    }
+    setState(() => _isLoading = true);
+    final uri = Uri.parse('${EnvConfig.baseUrl}/mood/log-mood');
+    bool allSuccess = true;
+
+    for (var mood in selectedMoods) {
+      try {
+        final token = await FirebaseAuth.instance.currentUser?.getIdToken();
+        final response = await http.post(
+          uri,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'firebase_token': token, 'mood': mood}),
+        );
+        if (response.statusCode != 200) allSuccess = false;
+      } catch (_) {
+        allSuccess = false;
+      }
+    }
+
+    if (!mounted) return;
+    if (allSuccess) {
+      // start success animation
+      setState(() {
+        _isSuccess = true;
+        _isLoading = false;
+      });
+      _checkmarkController.forward();
+      await Future.delayed(const Duration(seconds: 1));
+      if (mounted) Navigator.of(context).pop();
+    } else {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Some moods failed to log.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
+
+    Widget content = ListView(
+      controller: widget.scrollController,
+      children: [
+        // Handle & Title
+        Container(
+          margin: EdgeInsets.only(
+            top: screenHeight * 0.02,
+            left: screenWidth * 0.05,
+            right: screenWidth * 0.05,
+          ),
+          padding: EdgeInsets.symmetric(
+            vertical: screenHeight * 0.01,
+            horizontal: screenWidth * 0.05,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Align(
+                alignment: Alignment.centerLeft,
+                child: GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: const Icon(Icons.close, size: 28),
+                ),
+              ),
+              Text('How Do You Feel?', style: largeText()),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        // Mood Chips
+        Wrap(
+          spacing: 10,
+          runSpacing: 20,
+          alignment: WrapAlignment.center,
+          children:
+              moods.map((m) {
+                final label = m['label']!;
+                final isSelected = selectedMoods.contains(label);
+                return GestureDetector(
+                  onTap:
+                      () => setState(
+                        () =>
+                            isSelected
+                                ? selectedMoods.remove(label)
+                                : selectedMoods.add(label),
+                      ),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    width: 100,
+                    height: 100,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color:
+                          isSelected
+                              ? Colors.white
+                              : Colors.white.withOpacity(0.4),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow:
+                          isSelected
+                              ? [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 5),
+                                ),
+                              ]
+                              : [],
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(m['emoji']!, style: const TextStyle(fontSize: 32)),
+                        const SizedBox(height: 8),
+                        Text(
+                          label,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+        ),
+        const SizedBox(height: 30),
+        // Log Button
+        Container(
+          margin: EdgeInsets.symmetric(
+            horizontal: screenWidth * 0.05,
+            vertical: screenHeight * 0.015,
+          ),
+          child: ElevatedButton(
+            onPressed: _isLoading ? null : _logMoods,
+            style: ElevatedButton.styleFrom(
+              elevation: 0,
+              backgroundColor: Colors.pinkAccent.shade200,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: Text(
+              _isLoading ? '' : 'Log Mood',
+              style: mediumText(
+                color: Colors.white,
+                fontWeight: FontWeight.normal,
+              ),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 20),
+      ],
+    );
+
     return Container(
-      // Gradient background with rounded top corners.
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [Colors.grey.shade100, Colors.purple.shade100],
@@ -281,134 +465,30 @@ class _MoodTrackerSheetContentState extends State<MoodTrackerSheetContent> {
         ),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: ListView(
-        controller: widget.scrollController,
-        children: [
-          // Small handle at the top.
-          Container(
-            margin: EdgeInsets.only(
-              top: screenHeight * 0.02,
-              left: screenWidth * 0.05,
-              right: screenWidth * 0.05,
-            ),
-            padding: EdgeInsets.symmetric(
-              vertical: screenHeight * 0.01,
-              horizontal: screenWidth * 0.05,
-            ),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.all(Radius.circular(10)),
-            ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: GestureDetector(
-                    onTap: () => Navigator.of(context).pop(),
-                    child: Icon(Icons.close, size: 28),
+      child:
+          _isSuccess
+              ? Center(
+                child: ScaleTransition(
+                  scale: _checkmarkController.drive(
+                    Tween(
+                      begin: 0.0,
+                      end: 1.0,
+                    ).chain(CurveTween(curve: Curves.elasticOut)),
+                  ),
+                  child: const Icon(
+                    Icons.check_circle_outline,
+                    size: 80,
+                    color: Colors.green,
                   ),
                 ),
-                Center(child: Text("How Do You Feel ?", style: largeText())),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 20),
-          // Wrap the mood options in a responsive layout.
-          Wrap(
-            spacing: 10,
-            runSpacing: 20,
-            alignment: WrapAlignment.center,
-            children:
-                moods.map((mood) {
-                  final bool isSelected = selectedMoods.contains(mood['label']);
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        if (selectedMoods.contains(mood['label'])) {
-                          selectedMoods.remove(mood['label']);
-                        } else {
-                          selectedMoods.add(mood['label']!);
-                        }
-                      });
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      width: 100,
-                      height: 100,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color:
-                            isSelected
-                                ? Colors.white
-                                : Colors.white.withOpacity(0.4),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow:
-                            isSelected
-                                ? [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.2),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 5),
-                                  ),
-                                ]
-                                : [],
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            mood['emoji']!,
-                            style: const TextStyle(fontSize: 32),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            mood['label']!,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }).toList(),
-          ),
-          const SizedBox(height: 30),
-          Container(
-            margin: EdgeInsets.symmetric(
-              horizontal: screenWidth * 0.05,
-              vertical: screenHeight * 0.015,
-            ),
-            child: ElevatedButton(
-              onPressed: () {
-                // Save preferences action
-                Navigator.of(context).pop();
-              },
-              style: ElevatedButton.styleFrom(
-                elevation: 0,
-                backgroundColor: Colors.pinkAccent.shade200,
-                padding: EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: Text(
-                'Coming Soon',
-                style: mediumText(
-                  color: Colors.white,
-                  fontWeight: FontWeight.normal,
-                ),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 20),
-        ],
-      ),
+              )
+              : (_isLoading
+                  ? Shimmer.fromColors(
+                    baseColor: Colors.white,
+                    highlightColor: Colors.pink.shade50,
+                    child: content,
+                  )
+                  : content),
     );
   }
 }
