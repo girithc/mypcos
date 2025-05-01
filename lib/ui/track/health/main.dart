@@ -14,6 +14,7 @@ import 'package:roo_mobile/ui/track/action_card.dart';
 import 'package:roo_mobile/ui/track/components/medical/upload_report.dart';
 import 'package:roo_mobile/ui/track/health/diet/main.dart';
 import 'package:roo_mobile/ui/track/health/mood/mood.dart';
+import 'package:roo_mobile/ui/track/health/period/next_cycle.dart';
 import 'package:roo_mobile/ui/track/health/period/period_calendar.dart';
 import 'package:roo_mobile/ui/track/secondary_action_card.dart';
 import 'package:roo_mobile/utils/constants.dart';
@@ -52,6 +53,9 @@ class _HealthPageState extends State<HealthPage> {
                     ringColor: Colors.pinkAccent,
                     backgroundRingColor: Colors.pinkAccent.withOpacity(0.4),
                   ),
+                  onTap: () {
+                    showNextCycleBottomSheet(context, "Next Cycle");
+                  },
                 ),
               ),
 
@@ -93,7 +97,7 @@ class _HealthPageState extends State<HealthPage> {
             style: smallText(color: textColor),
           ),
           icon: Icon(Icons.calendar_today, color: iconColor),
-          colorl: secondaryColor,
+          colorl: Colors.white,
           onTapCallback: () {
             showPeriodCalendarBottomSheet(context);
           },
@@ -102,7 +106,7 @@ class _HealthPageState extends State<HealthPage> {
           title: Text("How do you feel", style: mediumText()),
           subtitle: Text("track you mood", style: smallText(color: textColor)),
           icon: Icon(Icons.mood, color: iconColor),
-          colorl: secondaryColor,
+          colorl: Colors.white,
           onTapCallback: () {
             showMoodBottomSheet(context);
           },
@@ -114,7 +118,7 @@ class _HealthPageState extends State<HealthPage> {
             style: smallText(color: textColor),
           ),
           icon: Icon(Icons.fastfood_outlined, color: iconColor),
-          colorl: secondaryColor,
+          colorl: Colors.white,
           onTapCallback: () {
             showDietaryPreferencesBottomSheet(context);
           },

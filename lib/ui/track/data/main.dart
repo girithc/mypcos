@@ -138,14 +138,14 @@ class _FilePageState extends State<FilePage> {
     }
 
     final firebaseToken = await user.getIdToken();
-    final uri = Uri.parse('${EnvConfig.baseUrl}/get-documents');
+    final uri = Uri.parse('${EnvConfig.baseUrl}/documents/get-documents');
 
     final response = await http.post(
       uri,
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'firebase_token': firebaseToken}),
     );
-    //print("Response: ${response.body}");
+    print("Response: ${response.body}");
 
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
