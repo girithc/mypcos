@@ -1,5 +1,10 @@
+import 'dart:convert';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:roo_mobile/utils/constants.dart';
+import 'package:shimmer/shimmer.dart';
 
 void showBodyDataBottomSheet(BuildContext context) {
   showModalBottomSheet(
@@ -40,14 +45,96 @@ class _BodyDataSheetContentState extends State<BodyDataSheetContent> {
   final _waistController = TextEditingController();
   final _bmiController = TextEditingController();
 
+  bool isLoading = true;
+  bool isSaving = false;
+
   @override
-  void dispose() {
-    _ageController.dispose();
-    _heightController.dispose();
-    _weightController.dispose();
-    _waistController.dispose();
-    _bmiController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _fetchBodyData();
+  }
+
+  Future<void> _fetchBodyData() async {
+    setState(() => isLoading = true);
+    final token =
+        await FirebaseAuth.instance.currentUser
+            ?.getIdToken(); // You should implement this
+    final response = await http.post(
+      Uri.parse('${EnvConfig.baseUrl}/body-data/get'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({"firebase_token": token}),
+    );
+    final data = jsonDecode(response.body)["body_data"];
+
+    void updateController(TextEditingController controller, dynamic value) {
+      controller.text = (value == 0 || value == 0.0) ? '' : value.toString();
+    }
+
+    updateController(_ageController, data["age"]);
+    updateController(_heightController, data["height_cm"]);
+    updateController(_weightController, data["weight_kg"]);
+    updateController(_waistController, data["waist_in"]);
+    updateController(_bmiController, data["bmi"]);
+    setState(() => isLoading = false);
+  }
+
+  Future<void> _saveBodyData() async {
+    setState(() {
+      isLoading = true;
+      isSaving = true;
+    });
+
+    final token = await FirebaseAuth.instance.currentUser?.getIdToken();
+    final response = await http.post(
+      Uri.parse('${EnvConfig.baseUrl}/body-data/update'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        "firebase_token": token,
+        "age": int.tryParse(_ageController.text) ?? 0,
+        "height_cm": double.tryParse(_heightController.text) ?? 0,
+        "weight_kg": double.tryParse(_weightController.text) ?? 0,
+        "waist_in": double.tryParse(_waistController.text) ?? 0,
+        "bmi": double.tryParse(_bmiController.text) ?? 0,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final updatedData = jsonDecode(response.body)["body_data"];
+
+      // Update the controllers from the updated response (optional sync back)
+      _ageController.text = updatedData["age"].toString();
+      _heightController.text = updatedData["height_cm"].toString();
+      _weightController.text = updatedData["weight_kg"].toString();
+      _waistController.text = updatedData["waist_in"].toString();
+      _bmiController.text = updatedData["bmi"].toString();
+
+      setState(() {
+        isLoading = false;
+        isSaving = false;
+      });
+      Navigator.of(context).pop();
+    } else {
+      showAboutDialog(
+        context: context,
+        applicationName: "Error",
+        children: [Text("Failed to save data: ${response.statusCode}")],
+      );
+    }
+  }
+
+  Widget _buildShimmerTile() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey.shade300,
+      highlightColor: Colors.grey.shade100,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        height: 80,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
   }
 
   @override
@@ -56,12 +143,12 @@ class _BodyDataSheetContentState extends State<BodyDataSheetContent> {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         // Header with title and close icon
         Container(
           margin: EdgeInsets.only(
             top: screenHeight * 0.02,
+            bottom: screenHeight * 0.02,
             left: screenWidth * 0.05,
             right: screenWidth * 0.05,
           ),
@@ -83,48 +170,73 @@ class _BodyDataSheetContentState extends State<BodyDataSheetContent> {
                   child: const Icon(Icons.close, size: 28),
                 ),
               ),
-              Center(child: Text("Your Body Data", style: largeText())),
+              Center(child: Text("My Body Data", style: largeText())),
             ],
           ),
         ),
 
         // Form content
         Expanded(
-          child: ListView(
-            padding: EdgeInsets.symmetric(
-              horizontal: screenWidth * 0.05,
-              vertical: screenHeight * 0.015,
-            ),
-            children: [
-              _formFieldTile("I am", "years old", _ageController, "24"),
-              _formFieldTile("My height is", "cm", _heightController, "165"),
-              _formFieldTile("My weight is", "kg", _weightController, "60"),
-              _formFieldTile(
-                "My waist size is",
-                "inches",
-                _waistController,
-                "28",
-              ),
-              _formFieldTile("My BMI is", "", _bmiController, "auto or manual"),
-            ],
-          ),
+          child:
+              isLoading
+                  ? ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: 6,
+                    itemBuilder: (_, __) => _buildShimmerTile(),
+                  )
+                  : ListView(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: screenWidth * 0.05,
+                    ),
+                    children: [
+                      _buildInfoTile(),
+                      _buildDataTile(
+                        "Age",
+                        "Enter your age",
+                        "years",
+                        _ageController,
+                      ),
+                      _buildDataTile(
+                        "Height",
+                        "Enter your height",
+                        "cm",
+                        _heightController,
+                      ),
+                      _buildDataTile(
+                        "Weight",
+                        "Enter your weight",
+                        "kg",
+                        _weightController,
+                      ),
+                      _buildDataTile(
+                        "Waist Size",
+                        "Enter waist size",
+                        "inches",
+                        _waistController,
+                      ),
+                      _buildDataTile("BMI", "Enter BMI", "", _bmiController),
+                    ],
+                  ),
         ),
 
-        // Save / submit button
-        Container(
-          margin: EdgeInsets.symmetric(
-            vertical: screenHeight * 0.02,
-            horizontal: screenWidth * 0.05,
-          ),
-          padding: EdgeInsets.symmetric(vertical: screenHeight * 0.015),
-          decoration: BoxDecoration(
-            color: secondaryColor,
-            borderRadius: const BorderRadius.all(Radius.circular(10)),
-          ),
-          child: Center(
-            child: Text(
-              "Save Body Data",
-              style: mediumText(color: Colors.white),
+        // Save Button
+        GestureDetector(
+          onTap: isSaving ? null : _saveBodyData,
+          child: Container(
+            margin: EdgeInsets.symmetric(
+              vertical: screenHeight * 0.02,
+              horizontal: screenWidth * 0.05,
+            ),
+            padding: EdgeInsets.symmetric(vertical: screenHeight * 0.015),
+            decoration: BoxDecoration(
+              color: isSaving ? Colors.pink.shade50 : secondaryColor,
+              borderRadius: const BorderRadius.all(Radius.circular(10)),
+            ),
+            child: Center(
+              child:
+                  isSaving
+                      ? const CircularProgressIndicator(color: Colors.black)
+                      : Text("Save", style: mediumText(color: Colors.black)),
             ),
           ),
         ),
@@ -132,40 +244,72 @@ class _BodyDataSheetContentState extends State<BodyDataSheetContent> {
     );
   }
 
-  Widget _formFieldTile(
-    String prefix,
-    String suffix,
-    TextEditingController controller,
+  Widget _buildDataTile(
+    String label,
     String hint,
+    String unit,
+    TextEditingController controller,
   ) {
     return Container(
-      margin: const EdgeInsets.only(top: 16),
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: mediumText(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    hintText: hint,
+                    border: const UnderlineInputBorder(),
+                  ),
+                ),
+              ),
+              if (unit.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                Text(unit, style: mediumText(color: Colors.grey)),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoTile() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: const [
           BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
         ],
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(prefix, style: mediumText()),
-          const SizedBox(width: 8),
+          const Icon(Icons.lock_outline, color: Colors.green),
+          const SizedBox(width: 12),
           Expanded(
-            child: TextField(
-              controller: controller,
-              textAlign: TextAlign.center,
-              decoration: InputDecoration(
-                isDense: true,
-                hintText: hint,
-                border: const UnderlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
+            child: Text(
+              "Your data is anonymized and securely encrypted.",
+              style: mediumText(color: Colors.black87),
             ),
           ),
-          const SizedBox(width: 8),
-          Text(suffix, style: mediumText(color: Colors.grey)),
         ],
       ),
     );
