@@ -111,6 +111,7 @@ class _NextCycleContentState extends State<NextCycleContent> {
           child: Stack(
             alignment: Alignment.center,
             children: [
+              // Left Icon (Close)
               Align(
                 alignment: Alignment.centerLeft,
                 child: GestureDetector(
@@ -118,7 +119,20 @@ class _NextCycleContentState extends State<NextCycleContent> {
                   child: Icon(Icons.close, size: 28),
                 ),
               ),
-              Center(child: Text("Period Calendar", style: largeText())),
+
+              // Centered Title with trailing icon
+              Center(
+                child: Row(
+                  mainAxisSize:
+                      MainAxisSize
+                          .min, // Ensures it wraps tightly around its content
+                  children: [
+                    Text("Next Cycle", style: largeText()),
+                    SizedBox(width: 8),
+                    Icon(Icons.auto_awesome, size: 20, color: Colors.grey[700]),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -129,47 +143,83 @@ class _NextCycleContentState extends State<NextCycleContent> {
               // 1. At-a-Glance Summary
               sectionCard(
                 icon: Icons.calendar_today,
-                title: 'At-a-Glance',
-                child: Row(
-                  children: [
-                    // Make this column flexible so it never overflows
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Next Period: May 28 - June 1',
-                            style: TextStyle(fontSize: 16),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Avg Cycle: 29 days',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[700],
+                title: 'Next Cycle',
+                child: IntrinsicHeight(
+                  // Makes both sides match tallest child height
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Left side: two stacked containers
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Flexible(
+                              child: Container(
+                                margin: EdgeInsets.only(right: 6, bottom: 6),
+                                padding: EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Colors.pinkAccent.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    'May 28 - June 1',
+                                    style: mediumText(),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ),
                             ),
+                            Flexible(
+                              child: Container(
+                                margin: EdgeInsets.only(right: 6, top: 6),
+                                padding: EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.av_timer,
+                                      size: 16,
+                                      color: Colors.grey[600],
+                                    ),
+                                    SizedBox(width: 6),
+                                    Text(
+                                      'Avg: 29 days',
+                                      style: mediumText(color: Colors.grey),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Right side: Days to Go
+                      Container(
+                        width: 100,
+                        margin: EdgeInsets.only(left: 6),
+                        padding: EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.pinkAccent.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '5 Days\nTo Go',
+                            textAlign: TextAlign.center,
+                            style: mediumText(fontWeight: FontWeight.w500),
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.pinkAccent.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '5 days to go',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              // 2. Fertility & Hormonal Windows
+              ), // 2. Fertility & Hormonal Windows
               sectionCard(
                 icon: Icons.pie_chart,
                 title: 'Fertility & PMS',
@@ -188,22 +238,10 @@ class _NextCycleContentState extends State<NextCycleContent> {
                 ),
               ),
               // 3. Visualizations & Trends
-              sectionCard(
-                icon: Icons.show_chart,
-                title: 'Trends',
-                child: Container(
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(child: Text('📈 Graph Placeholder')),
-                ),
-              ),
               // 4. Symptom & Habit Tracking
               sectionCard(
                 icon: Icons.favorite_border,
-                title: 'Log Symptoms',
+                title: 'Period Symptoms',
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
@@ -229,57 +267,23 @@ class _NextCycleContentState extends State<NextCycleContent> {
                   ],
                 ),
               ),
-              // 6. Actions & Settings
+
               sectionCard(
-                icon: Icons.settings,
-                title: 'Actions',
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    TextButton(
-                      onPressed: () {
-                        /* edit cycle */
-                      },
-                      child: Text('Edit Predictions'),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        /* notifications */
-                      },
-                      child: Text('Notification Settings'),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        /* sync data */
-                      },
-                      child: Text('Sync Tracker'),
-                    ),
-                  ],
+                icon: Icons.show_chart,
+                title: 'Trends',
+                child: Container(
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Center(child: Text('📈 Graph Placeholder')),
                 ),
               ),
-              SizedBox(height: 16),
 
+              // 6. Actions & Settings
               SizedBox(height: 24),
             ],
-          ),
-        ),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.pinkAccent,
-                padding: EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: Text('In Progress', style: TextStyle(fontSize: 16)),
-            ),
           ),
         ),
       ],

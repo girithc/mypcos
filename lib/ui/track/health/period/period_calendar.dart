@@ -152,7 +152,7 @@ class _PeriodCalendarSheetContentState
 
     try {
       final response = await http.post(
-        Uri.parse('${EnvConfig.baseUrl}/period-calendar-update'),
+        Uri.parse('${EnvConfig.baseUrl}/period-calendar/update'),
         headers: {'Content-Type': 'application/json'},
         body: body,
       );
@@ -222,7 +222,7 @@ class _PeriodCalendarSheetContentState
 
     try {
       final resp = await http.post(
-        Uri.parse('${EnvConfig.baseUrl}/period-calendar-get'),
+        Uri.parse('${EnvConfig.baseUrl}/period-calendar/get'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'firebase_token': token}),
       );
@@ -318,7 +318,7 @@ class _PeriodCalendarSheetContentState
     try {
       // 3. Send POST request
       final response = await http.post(
-        Uri.parse('${EnvConfig.baseUrl2}/period-calendar-reset'),
+        Uri.parse('${EnvConfig.baseUrl2}/period-calendar/reset'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'firebase_token': token,

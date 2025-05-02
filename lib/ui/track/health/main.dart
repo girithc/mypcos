@@ -14,6 +14,7 @@ import 'package:roo_mobile/ui/track/action_card.dart';
 import 'package:roo_mobile/ui/track/components/medical/upload_report.dart';
 import 'package:roo_mobile/ui/track/health/diet/main.dart';
 import 'package:roo_mobile/ui/track/health/mood/mood.dart';
+import 'package:roo_mobile/ui/track/health/period/feel_better.dart';
 import 'package:roo_mobile/ui/track/health/period/next_cycle.dart';
 import 'package:roo_mobile/ui/track/health/period/period_calendar.dart';
 import 'package:roo_mobile/ui/track/secondary_action_card.dart';
@@ -74,6 +75,8 @@ class _HealthPageState extends State<HealthPage> {
                     backgroundColor: Colors.pink.shade50,
                     iconColor: Colors.pinkAccent,
                   ),
+                  onTap:
+                      () => {showFeelBetterBottomSheet(context, "Feel Better")},
                 ),
               ),
             ],
