@@ -141,106 +141,136 @@ class _BodyDataSheetContentState extends State<BodyDataSheetContent> {
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
+    final keyboardInset = MediaQuery.of(context).viewInsets.bottom;
 
-    return Column(
-      children: [
-        // Header with title and close icon
-        Container(
-          margin: EdgeInsets.only(
-            top: screenHeight * 0.02,
-            bottom: screenHeight * 0.02,
-            left: screenWidth * 0.05,
-            right: screenWidth * 0.05,
-          ),
-          padding: EdgeInsets.symmetric(
-            vertical: screenHeight * 0.01,
-            horizontal: screenWidth * 0.05,
-          ),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.all(Radius.circular(10)),
-          ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Align(
-                alignment: Alignment.centerLeft,
-                child: GestureDetector(
-                  onTap: () => Navigator.of(context).pop(),
-                  child: const Icon(Icons.close, size: 28),
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+
+      child: AnimatedPadding(
+        duration: const Duration(milliseconds: 250),
+        padding: EdgeInsets.only(bottom: keyboardInset),
+        curve: Curves.easeOut,
+        child: Column(
+          children: [
+            // Header with title and close icon
+            Container(
+              margin: EdgeInsets.only(
+                top: screenHeight * 0.02,
+                bottom: screenHeight * 0.02,
+                left: screenWidth * 0.05,
+                right: screenWidth * 0.05,
+              ),
+              padding: EdgeInsets.symmetric(
+                vertical: screenHeight * 0.01,
+                horizontal: screenWidth * 0.05,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.all(Radius.circular(10)),
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: GestureDetector(
+                      onTap: () => Navigator.of(context).pop(),
+                      child: const Icon(Icons.close, size: 28),
+                    ),
+                  ),
+                  Center(child: Text("My Body Data", style: largeText())),
+                ],
+              ),
+            ),
+
+            // Form content
+            Expanded(
+              child:
+                  isLoading
+                      ? ListView.builder(
+                        padding: EdgeInsets.only(
+                          top: 16,
+                          bottom:
+                              16 + keyboardInset, // leave space for keyboard
+                          left: 16,
+                          right: 16,
+                        ),
+                        itemCount: 6,
+                        itemBuilder: (_, __) => _buildShimmerTile(),
+                      )
+                      : ListView(
+                        // 2) Drag down on the list to dismiss keyboard
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
+                        padding: EdgeInsets.only(
+                          left: screenWidth * 0.05,
+                          right: screenWidth * 0.05,
+                          bottom: screenHeight * 0.015 + keyboardInset,
+                          top: screenHeight * 0.005,
+                        ),
+                        children: [
+                          _buildInfoTile(),
+                          _buildDataTile(
+                            "Age",
+                            "Enter your age",
+                            "years",
+                            _ageController,
+                          ),
+                          _buildDataTile(
+                            "Height",
+                            "Enter your height",
+                            "cm",
+                            _heightController,
+                          ),
+                          _buildDataTile(
+                            "Weight",
+                            "Enter your weight",
+                            "kg",
+                            _weightController,
+                          ),
+                          _buildDataTile(
+                            "Waist Size",
+                            "Enter waist size",
+                            "inches",
+                            _waistController,
+                          ),
+                          _buildDataTile(
+                            "BMI",
+                            "Enter BMI",
+                            "",
+                            _bmiController,
+                          ),
+                        ],
+                      ),
+            ),
+
+            // Save Button
+            GestureDetector(
+              onTap: isSaving ? null : _saveBodyData,
+              child: Container(
+                margin: EdgeInsets.symmetric(
+                  vertical: screenHeight * 0.02,
+                  horizontal: screenWidth * 0.05,
+                ),
+                padding: EdgeInsets.symmetric(vertical: screenHeight * 0.015),
+                decoration: BoxDecoration(
+                  color: isSaving ? Colors.pink.shade50 : secondaryColor,
+                  borderRadius: const BorderRadius.all(Radius.circular(10)),
+                ),
+                child: Center(
+                  child:
+                      isSaving
+                          ? const CircularProgressIndicator(color: Colors.black)
+                          : Text(
+                            "Save",
+                            style: mediumText(color: Colors.black),
+                          ),
                 ),
               ),
-              Center(child: Text("My Body Data", style: largeText())),
-            ],
-          ),
-        ),
-
-        // Form content
-        Expanded(
-          child:
-              isLoading
-                  ? ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: 6,
-                    itemBuilder: (_, __) => _buildShimmerTile(),
-                  )
-                  : ListView(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: screenWidth * 0.05,
-                    ),
-                    children: [
-                      _buildInfoTile(),
-                      _buildDataTile(
-                        "Age",
-                        "Enter your age",
-                        "years",
-                        _ageController,
-                      ),
-                      _buildDataTile(
-                        "Height",
-                        "Enter your height",
-                        "cm",
-                        _heightController,
-                      ),
-                      _buildDataTile(
-                        "Weight",
-                        "Enter your weight",
-                        "kg",
-                        _weightController,
-                      ),
-                      _buildDataTile(
-                        "Waist Size",
-                        "Enter waist size",
-                        "inches",
-                        _waistController,
-                      ),
-                      _buildDataTile("BMI", "Enter BMI", "", _bmiController),
-                    ],
-                  ),
-        ),
-
-        // Save Button
-        GestureDetector(
-          onTap: isSaving ? null : _saveBodyData,
-          child: Container(
-            margin: EdgeInsets.symmetric(
-              vertical: screenHeight * 0.02,
-              horizontal: screenWidth * 0.05,
             ),
-            padding: EdgeInsets.symmetric(vertical: screenHeight * 0.015),
-            decoration: BoxDecoration(
-              color: isSaving ? Colors.pink.shade50 : secondaryColor,
-              borderRadius: const BorderRadius.all(Radius.circular(10)),
-            ),
-            child: Center(
-              child:
-                  isSaving
-                      ? const CircularProgressIndicator(color: Colors.black)
-                      : Text("Save", style: mediumText(color: Colors.black)),
-            ),
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -271,6 +301,8 @@ class _BodyDataSheetContentState extends State<BodyDataSheetContent> {
                 child: TextField(
                   controller: controller,
                   keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => FocusScope.of(context).unfocus(),
                   decoration: InputDecoration(
                     hintText: hint,
                     border: const UnderlineInputBorder(),

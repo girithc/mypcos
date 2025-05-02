@@ -280,6 +280,7 @@ class _FilePageState extends State<FilePage> {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -657,107 +658,114 @@ class _FilePageState extends State<FilePage> {
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-              child: ListView(
-                controller: controller,
-                children: [
-                  Text(
-                    "Edit Filename",
-                    style: mediumText(color: Colors.black87),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(color: Colors.white, blurRadius: 4),
-                      ],
+              child: AnimatedPadding(
+                duration: const Duration(milliseconds: 250),
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom,
+                ),
+                curve: Curves.easeOut,
+                child: ListView(
+                  controller: controller,
+                  children: [
+                    Text(
+                      "Edit Filename",
+                      style: mediumText(color: Colors.black87),
                     ),
-                    child: TextField(
-                      controller: _controller,
-                      maxLines: 2,
-                      minLines: 1,
-                      cursorColor: Colors.black,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide.none,
-                        ),
-                        hintText: 'Enter filename',
+                    const SizedBox(height: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(color: Colors.white, blurRadius: 4),
+                        ],
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
-                    child: Image.network(
-                      fileUrl,
-                      height: MediaQuery.of(context).size.height * 0.35,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder:
-                          (context, error, stackTrace) => Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Text(
-                              'Error loading image.',
-                              style: TextStyle(color: Colors.red),
-                            ),
+                      child: TextField(
+                        controller: _controller,
+                        maxLines: 2,
+                        minLines: 1,
+                        cursorColor: Colors.black,
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(24),
+                            borderSide: BorderSide.none,
                           ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Center(
-                    child: ElevatedLayerButton(
-                      onClick: () async {
-                        final newFilename = _controller.text.trim();
-                        if (newFilename.isNotEmpty) {
-                          await saveNewFileName(documentId, newFilename);
-                          onRename(newFilename);
-                          fetchDocuments();
-                          Navigator.pop(context); // Dismiss sheet
-                        } else {
-                          print("❌ Filename cannot be empty");
-                        }
-                      },
-                      buttonHeight: 55,
-                      buttonWidth: MediaQuery.of(context).size.width * 0.9,
-                      animationDuration: const Duration(milliseconds: 200),
-                      animationCurve: Curves.ease,
-                      topDecoration: BoxDecoration(
-                        color: Colors.greenAccent,
-                        border: Border.all(),
-                      ),
-                      topLayerChild: Text(
-                        "Save",
-                        style: mediumText(color: Colors.black54),
-                      ),
-                      baseDecoration: BoxDecoration(
-                        color: Colors.deepPurple,
-                        border: Border.all(),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Center(
-                    child: TextButton(
-                      style: TextButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                      ),
-                      onPressed: () async {
-                        // TODO: Confirm deletion + call delete endpoint
-                        await confirmAndDeleteDocument(documentId);
-                        Navigator.pop(context);
-                      },
-                      child: Text(
-                        "Delete Image",
-                        style: TextStyle(
-                          color: Colors.black45,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                          hintText: 'Enter filename',
                         ),
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: Image.network(
+                        fileUrl,
+                        height: MediaQuery.of(context).size.height * 0.35,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder:
+                            (context, error, stackTrace) => Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Text(
+                                'Error loading image.',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Center(
+                      child: ElevatedLayerButton(
+                        onClick: () async {
+                          final newFilename = _controller.text.trim();
+                          if (newFilename.isNotEmpty) {
+                            await saveNewFileName(documentId, newFilename);
+                            onRename(newFilename);
+                            fetchDocuments();
+                            Navigator.pop(context); // Dismiss sheet
+                          } else {
+                            print("❌ Filename cannot be empty");
+                          }
+                        },
+                        buttonHeight: 55,
+                        buttonWidth: MediaQuery.of(context).size.width * 0.9,
+                        animationDuration: const Duration(milliseconds: 200),
+                        animationCurve: Curves.ease,
+                        topDecoration: BoxDecoration(
+                          color: Colors.greenAccent,
+                          border: Border.all(),
+                        ),
+                        topLayerChild: Text(
+                          "Save",
+                          style: mediumText(color: Colors.black54),
+                        ),
+                        baseDecoration: BoxDecoration(
+                          color: Colors.deepPurple,
+                          border: Border.all(),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Center(
+                      child: TextButton(
+                        style: TextButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                        ),
+                        onPressed: () async {
+                          // TODO: Confirm deletion + call delete endpoint
+                          await confirmAndDeleteDocument(documentId);
+                          Navigator.pop(context);
+                        },
+                        child: Text(
+                          "Delete Image",
+                          style: TextStyle(
+                            color: Colors.black45,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           },
