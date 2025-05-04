@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -582,14 +583,47 @@ class _MoodTrackerSheetContentState extends State<MoodTrackerSheetContent>
   }
 
   Widget _buildMoodTrendPlaceholder(BuildContext context, double screenWidth) {
-    // Added context parameter
-    // Get the dates for the last 7 days
+    // Get the dates for the last 7 days (most recent date last)
     final List<DateTime> trendDates =
         List.generate(
           7,
           (index) => DateTime.now().subtract(Duration(days: index)),
         ).reversed.toList();
+    final Map<DateTime, double> _moodValues = {
+      // Example data for the last 7 days leading up to May 3, 2025
+      DateTime(2025, 4, 27): 4.8, // Sun
+      DateTime(2025, 4, 28): 2.5, // Mon
+      DateTime(2025, 4, 29): 3.0, // Tue
+      DateTime(2025, 4, 30): 4.5, // Wed
+      DateTime(2025, 5, 1): 3.5, // Thu
+      DateTime(2025, 5, 2): 4.0, // Fri
+      DateTime(2025, 5, 3): 3.8, // Sat (Today)
+    };
+    // Define the expected range of your mood values
+    const double _minMoodValue = 0.0;
+    const double _maxMoodValue = 5.0;
     final theme = Theme.of(context); // Get theme for colors
+
+    // --- Helper to get mood value ---
+    double getMoodValueForDate(DateTime date) {
+      DateTime dateOnly = DateTime(date.year, date.month, date.day);
+      // Return the value or a default (e.g., min value) if no data exists
+      // You might want different default handling (e.g., null, indicate missing data)
+      return _moodValues[dateOnly] ?? _minMoodValue;
+    }
+    // -------------------------------
+
+    // --- Prepare spots for LineChart ---
+    final List<FlSpot> spots =
+        trendDates.asMap().entries.map((entry) {
+          int index = entry.key; // X-axis value (0, 1, 2...)
+          DateTime date = entry.value;
+          double value = getMoodValueForDate(date); // Y-axis value
+          // Clamp value to ensure it's within minY/maxY bounds for safety
+          value = value.clamp(_minMoodValue, _maxMoodValue);
+          return FlSpot(index.toDouble(), value);
+        }).toList();
+    // ---------------------------------
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
@@ -599,8 +633,7 @@ class _MoodTrackerSheetContentState extends State<MoodTrackerSheetContent>
           Row(
             // Title and Details Button
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment:
-                CrossAxisAlignment.center, // Align items vertically
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
                 "Your Mood Trend",
@@ -615,77 +648,141 @@ class _MoodTrackerSheetContentState extends State<MoodTrackerSheetContent>
                 },
                 style: TextButton.styleFrom(
                   backgroundColor: Colors.white,
-                  foregroundColor: theme.primaryColor,
+                  foregroundColor: Colors.pink, // Match text color below
                   padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  // Consider adding shape for rounded corners if desired
                 ),
                 child: Text(
                   "Details +",
                   style: smallText(
                     fontWeight: FontWeight.bold,
-                    color: Colors.pink,
+                    color: Colors.pink, // Ensure this matches foregroundColor
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10), // Reduced space
+          const SizedBox(height: 10),
           GestureDetector(
             onTap: () {
               _showDetailedMoodDialog(context);
             },
+            // **** Line Chart Implementation ****
             child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
+              height: 150, // Adjust height as needed
+              padding: const EdgeInsets.symmetric(
+                vertical: 15,
+                horizontal: 10,
+              ).copyWith(right: 20, top: 20), // Adjust padding for labels
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.7),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.grey.shade300),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children:
-                    trendDates.map((date) {
-                      // Find the summary color for the specific date
-                      // Need to compare date only (ignore time)
-                      DateTime dateOnly = DateTime(
-                        date.year,
-                        date.month,
-                        date.day,
-                      );
-                      Color dayColor =
-                          Colors.grey.shade200; // Default if no data
-                      _moodTrendSummary.forEach((key, value) {
-                        if (DateTime(key.year, key.month, key.day) ==
-                            dateOnly) {
-                          dayColor = value;
-                        }
-                      });
+              child: LineChart(
+                LineChartData(
+                  backgroundColor: Colors.white38,
 
-                      return Column(
-                        children: [
-                          Container(
-                            height: 40,
-                            width: 25,
-                            decoration: BoxDecoration(
-                              color: dayColor,
-                              borderRadius: BorderRadius.circular(4),
+                  minY: _minMoodValue, // Use defined min Y
+                  maxY: _maxMoodValue, // Use defined max Y
+                  gridData: const FlGridData(show: false),
+                  titlesData: FlTitlesData(
+                    show: true,
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 30,
+                        interval: 1,
+                        getTitlesWidget: (value, meta) {
+                          final index = value.toInt();
+                          if (index < 0 || index >= trendDates.length) {
+                            return Container();
+                          }
+                          final date = trendDates[index];
+                          return SideTitleWidget(
+                            space: 8.0,
+                            meta: meta,
+                            child: Text(
+                              DateFormat('E').format(date), // Day initial
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 11,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 5),
-                          Text(
-                            DateFormat('E').format(
-                              date,
-                            ), // Format date to day initial (e.g., 'Sat')
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey.shade600,
+                          );
+                        },
+                      ),
+                    ),
+                    leftTitles: const AxisTitles(
+                      // Hide Y-axis labels for cleaner look, enable if needed
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: spots, // Use the generated FlSpot list
+                      isCurved: true,
+                      // Use theme's primary color or a specific color
+                      color: Colors.pink,
+                      barWidth: 3,
+                      isStrokeCapRound: true,
+                      dotData: const FlDotData(show: true), // Show dots
+                      belowBarData: BarAreaData(
+                        show: true,
+                        color: theme.primaryColor.withOpacity(0.2),
+                      ),
+                    ),
+                  ],
+                  // Optional: Add touch interaction
+                  lineTouchData: LineTouchData(
+                    touchTooltipData: LineTouchTooltipData(
+                      getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
+                        return touchedBarSpots.map((barSpot) {
+                          final flSpot = barSpot;
+                          if (flSpot.x.toInt() < 0 ||
+                              flSpot.x.toInt() >= trendDates.length) {
+                            return null; // Should not happen
+                          }
+                          final date = trendDates[flSpot.x.toInt()];
+                          final dateStr = DateFormat(
+                            'MMM d',
+                          ).format(date); // e.g., May 3
+
+                          return LineTooltipItem(
+                            '${flSpot.y.toStringAsFixed(1)}\n', // Mood value
+                            const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
                             ),
-                          ),
-                        ],
-                      );
-                    }).toList(),
+                            children: [
+                              TextSpan(
+                                text: dateStr, // Date string
+                                style: TextStyle(
+                                  color: Colors.grey[300],
+                                  fontWeight: FontWeight.normal,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                            textAlign: TextAlign.center,
+                          );
+                        }).toList();
+                      },
+                    ),
+                    handleBuiltInTouches: true,
+                  ),
+                ),
               ),
             ),
           ),
+          // ***********************************
         ],
       ),
     );
