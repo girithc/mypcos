@@ -1,0 +1,97 @@
+Table: medications
+  - id: integer
+  - name: character varying
+
+Table: moods
+  - id: integer
+  - name: character varying
+
+Table: period_medications
+  - period_id: integer
+  - medication_id: integer
+  - dosage: character varying
+  - taken_at: timestamp with time zone
+
+Table: period_moods
+  - period_id: integer
+  - mood_id: integer
+  - intensity: integer
+
+Table: period_symptoms
+  - period_id: integer
+  - symptom_id: integer
+  - severity: integer
+
+Table: periods
+  - id: integer
+  - user_id: integer
+  - start_date: date
+  - end_date: date
+  - flow_level: character varying
+  - pain_level: integer
+  - notes: text
+  - created_at: timestamp with time zone
+  - updated_at: timestamp with time zone
+
+Table: symptoms
+  - id: integer
+  - name: character varying
+
+Table: pcos_symptoms
+  - id: integer
+  - name: character varying
+
+Table: user_accounts
+  - id: integer
+  - uid: text
+  - name: character varying
+  - email: character varying
+  - phone: character varying
+  - auth_provider: character varying
+  - created_at: timestamp with time zone
+
+Table: pcos_symptoms
+  - symptom_id: integer (reference to pcos_symptoms.id)
+  - severity: integer
+  - user_id: integer (reference to user_accounts.id)
+  - created_at: timestamp with time zone
+  - primary key (symptom_id, user_id)
+
+Table: chat_messages
+  - id: bigint (primary key, auto-increment)
+  - user_id: integer (foreign key to user_accounts.id)
+  - sender: text  -- 'user' or 'ai'
+  - message: text
+  - created_at: timestamp with time zone DEFAULT now()
+
+Table: medical_reports
+  - id: BIGSERIAL (primary key)
+  - user_id: integer NOT NULL
+      → foreign key references user_accounts(id) ON DELETE CASCADE
+  - image_url: text NOT NULL
+  - filename: text NOT NULL
+  - rag_output: jsonb           — store the agent.run() output
+  - created_at: timestamp with time zone NOT NULL DEFAULT now()
+
+
+Table: diet_choices
+  - name
+  - id
+
+Table: diet_choices_user
+  - diet_id
+  - user_id
+  - primary key (diet_id, user_id)
+
+body_data_user (
+  user_id INTEGER PRIMARY KEY REFERENCES user_accounts(id) ON DELETE CASCADE,
+
+  age INTEGER DEFAULT 0,
+  height_cm REAL DEFAULT 0,
+  weight_kg REAL DEFAULT 0,
+  waist_in REAL DEFAULT 0,
+  bmi REAL DEFAULT 0,
+
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);  
