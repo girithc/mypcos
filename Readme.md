@@ -38,7 +38,7 @@ MyPCOS is a comprehensive mobile application designed to help women manage Polyc
 ## File Structure
 
 ```
-mypcos-1/
+mypcos/
 ├── mobile/
 │   ├── android/                # Android-specific files
 │   ├── ios/                    # iOS-specific files, including Apple Sign-In setup
