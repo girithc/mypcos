@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "412011242039",
+    "project_id": "pcos-8baf9",
+    "storage_bucket": "pcos-8baf9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:412011242039:android:b787d99cec31f3fbe255b2",
+        "android_client_info": {
+          "package_name": "com.pcos.ios"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "412011242039-s92t3860332kevaivak0nei2k21p7tv7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAlY-1iWyBIj7VZ_r8TFQczY2XtUKNuXFg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "412011242039-s92t3860332kevaivak0nei2k21p7tv7.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "412011242039-v94vhth3ck3g9m9j1tq6780uh7q9gqg4.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.rooMobile"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
