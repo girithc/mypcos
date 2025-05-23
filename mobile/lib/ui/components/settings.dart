@@ -106,21 +106,11 @@ class _SettingsPageContentState extends State<SettingsPageContent> {
                         Colors.greenAccent.shade200, // ✅ CHANGED
                     onTap: () => print("User card tapped"),
                     userName: userEmail,
-                    userNameStyle: const TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      fontStyle: FontStyle.italic,
-                    ),
+                    
                   ),
                 ),
                 SettingsGroup(
-                  dividerStyle: Divider(
-                    color: Colors.greenAccent.shade200.withOpacity(
-                      0.3,
-                    ), // ✅ CHANGED
-                    thickness: 1.0,
-                  ),
+                  
                   items: [
                     SettingsItem(
                       onTap: () => _signOut(context),

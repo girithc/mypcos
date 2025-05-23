@@ -14,9 +14,7 @@ import 'package:http/http.dart' as http;
 import 'package:roo_mobile/utils/firebase_options.dart';
 import 'package:roo_mobile/ui/components/bottom_sheet.dart';
 import 'package:roo_mobile/ui/components/chat.dart';
-import 'package:roo_mobile/ui/chat/chat_home.dart';
 import 'package:roo_mobile/ui/store/events.dart';
-import 'package:roo_mobile/ui/explore/library.dart';
 import 'package:roo_mobile/ui/track/track_page.dart';
 import 'package:roo_mobile/utils/constants.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -302,7 +300,7 @@ class _LoginPageState extends State<LoginPage> {
           );
         }
       } else {
-        log('Backend Authentication Failed: ${response.body}');
+        print('Backend Authentication Failed: ${response.body}');
         if (context.mounted) {
           _showErrorDialog("Login failed. Please try again.");
         }
